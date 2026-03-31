@@ -179,7 +179,7 @@ class Action:
 
         if self.arg_type != ArgType.POSITIONAL:
             result["dest"] = self.dest
-            result["requred"] = self.required
+            result["required"] = self.required
 
         add_if_not("help", MISSING)
         add_if_not("default", MISSING)
@@ -251,9 +251,6 @@ def parse_field(fld: Field) -> Optional[Action]:
         if "type" in kw_args:
             action.value_type = kw_args["type"]
             del kw_args["type"]
-            ic(action.value_type)
-            ic(fld.type)
-            ic(isinstance(action.value_type, BaseType))
             if isinstance(action.value_type, BaseType):
                 if action.value_type.get_type() is not fld.type:
                     raise TypeError(
@@ -270,7 +267,10 @@ def parse_field(fld: Field) -> Optional[Action]:
                 assert "nargs" not in kw_args
             case "append":
                 inner_type = get_args(action.value_type)
-                assert len(inner_type) == 1
+                if len(inner_type) != 1:
+                    raise TypeError(
+                        f"Expected {action.dest} to have a single nested type, but found {len(inner_type)} for type {action.value_type}"
+                    )
                 action.value_type = inner_type[0]
             case _:
                 pass
@@ -285,7 +285,10 @@ def parse_field(fld: Field) -> Optional[Action]:
 
         if nargs_more_than_one:
             inner_type = get_args(action.value_type)
-            assert len(inner_type) == 1
+            if len(inner_type) != 1:
+                raise TypeError(
+                    f"Expected {action.dest} to have a single nested type, but found {len(inner_type)} for type {action.value_type}"
+                )
             action.value_type = inner_type[0]
 
         action.choices = kw_args.get("choices", None)

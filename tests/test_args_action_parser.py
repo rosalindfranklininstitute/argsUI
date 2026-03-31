@@ -50,8 +50,8 @@ def test_nargs():
     class InvalidOptions:
         a: int = dargs.arg_field(nargs=2)
 
-    with pytest.raises(RuntimeError):
-        for field in fields(InvalidOptions):
+    for field in fields(InvalidOptions):
+        with pytest.raises(TypeError):
             dargs.parse_field(field)
 
 
@@ -74,7 +74,7 @@ def test_append():
         append_nargs: list[int] = dargs.arg_field(action="append", nargs=2)
 
     for field in fields(InvalidOptions):
-        with pytest.raises(RuntimeError):
+        with pytest.raises(TypeError):
             dargs.parse_field(field)
 
 

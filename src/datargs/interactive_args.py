@@ -27,6 +27,8 @@ from .args import (
     ArgType,
 )
 
+from .extra_types import FilePathType, DirPathType
+
 
 class Option(ABC):
     def __init__(self, name, parent: QtWidgets.QWidget):
@@ -53,9 +55,12 @@ class Option(ABC):
 
 
 class FolderOption(Option):
-    def __init__(self, name, parent: QtWidgets.QWidget):
+    def __init__(
+        self, name, path_type: FilePathType | DirPathType, parent: QtWidgets.QWidget
+    ):
         super().__init__(name, parent)
 
+        self.path_type = path_type
         self.label = QtWidgets.QLabel(f"{self.name}:")
 
         self.entry = QtWidgets.QLineEdit()
@@ -87,8 +92,14 @@ class FolderOption(Option):
 
     def _browse(self):
         dialog = QtWidgets.QFileDialog(self.parent, self.name)
-        dialog.setFileMode(QtWidgets.QFileDialog.Directory)
-        dialog.setOptions(QtWidgets.QFileDialog.ShowDirsOnly)
+        if isinstance(self.path_type, FilePathType):
+            if self.path_type.must_exist:
+                dialog.setFileMode(QtWidgets.QFileDialog.ExistingFile)
+            else:
+                dialog.setFileMode(QtWidgets.QFileDialog.AnyFile)
+        else:
+            dialog.setFileMode(QtWidgets.QFileDialog.Directory)
+            dialog.setOptions(QtWidgets.QFileDialog.ShowDirsOnly)
 
         if dialog.exec():
             selected = dialog.selectedFiles()[0]
@@ -347,7 +358,9 @@ class MainWindow(QtWidgets.QWidget):
             case "store":
                 if action.choices is None:
                     if action.value_type is Path:
-                        option = FolderOption(name, self)
+                        option = FolderOption(name, FilePathType(False), self)
+                    elif isinstance(action.value_type, FilePathType | DirPathType):
+                        option = FolderOption(name, action.value_type, self)
                     else:
                         assert (
                             action.value_type is int
