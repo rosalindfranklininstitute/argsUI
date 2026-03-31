@@ -9,6 +9,8 @@ from dataclasses import field, Field, MISSING, fields, dataclass, is_dataclass
 from enum import Enum
 import sys
 
+from .extra_types import BaseType
+
 from icecream import ic
 
 MISSING_TYPE = type(MISSING)
@@ -166,7 +168,7 @@ class Action:
         return f"Action( {', '.join(parts)})"
 
     def to_argument_kwargs(self) -> dict[str, Any]:
-        result: dict[str, Any] = dict(action=self.action, required=self.required)
+        result: dict[str, Any] = dict(action=self.action)
 
         def add_if_not(key, filter_value):
             if self[key] != filter_value:
@@ -177,6 +179,8 @@ class Action:
 
         if self.arg_type != ArgType.POSITIONAL:
             result["dest"] = self.dest
+            result["requred"] = self.required
+
         add_if_not("help", MISSING)
         add_if_not("default", MISSING)
         add_if_not("nargs", None)
@@ -244,17 +248,32 @@ def parse_field(fld: Field) -> Optional[Action]:
         kw_args = copy.copy(fld.metadata["kw_args"])
         action.action = kw_args.get("action", "store")
 
+        if "type" in kw_args:
+            action.value_type = kw_args["type"]
+            del kw_args["type"]
+            ic(action.value_type)
+            ic(fld.type)
+            ic(isinstance(action.value_type, BaseType))
+            if isinstance(action.value_type, BaseType):
+                if action.value_type.get_type() is not fld.type:
+                    raise TypeError(
+                        f'Expected "{fld.name}" of type {action.value_type} to be {action.value_type.get_type()} but found {fld.type}'
+                    )
+
+        else:
+            action.value_type = fld.type
+
         match action.action:
             case "store_true" | "store_false":
                 action.default = MISSING
                 action.value_type = MISSING
                 assert "nargs" not in kw_args
             case "append":
-                inner_type = get_args(fld.type)
+                inner_type = get_args(action.value_type)
                 assert len(inner_type) == 1
                 action.value_type = inner_type[0]
             case _:
-                action.value_type = fld.type
+                pass
 
         action.nargs = kw_args.get("nargs", None)
         if isinstance(action.nargs, int):
@@ -270,6 +289,8 @@ def parse_field(fld: Field) -> Optional[Action]:
             action.value_type = inner_type[0]
 
         action.choices = kw_args.get("choices", None)
+        if action.arg_type == ArgType.POSITIONAL:
+            assert kw_args.get("required", False) is False
         action.required = kw_args.get("required", False)
         action.metavar = kw_args.get("metavar", None)
 
@@ -280,6 +301,7 @@ def parse_field(fld: Field) -> Optional[Action]:
 
         return action
     except BaseException as e:
+        raise e
         raise RuntimeError(f"Could not process field '{fld.name}'") from e
 
 

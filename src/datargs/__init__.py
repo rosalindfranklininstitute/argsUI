@@ -12,3 +12,4 @@ from .args import (
 )
 from .config_args import ConfigFileArgs
 from .interactive_args import InteractiveArgs, NoInteractiveArgs
+from .extra_types import DirPathType, FilePathType
