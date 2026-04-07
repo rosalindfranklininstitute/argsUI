@@ -276,8 +276,19 @@ class ItemsOption(Option):
         for item in value:
             self.add_item(item)
 
-    def add_item(self, values: list, raise_on_invalid: bool = True):
-        assert len(values) == len(self.types)
+    def add_item(self, values: Any, raise_on_invalid: bool = True):
+        if isinstance(values, list):
+            if len(values) != len(self.types):
+                raise ValueError(
+                    f"Expected values for {self.name} to have {len(self.types)} values but found {len(values)}"
+                )
+        else:
+            if len(self.types) != 1:
+                raise ValueError(
+                    f"Expected values for {self.name} to have {len(self.types)} values but found 1"
+                )
+            values = [values]
+
         valid = True
         for entry, value in zip(self.entries, values):
             if validator := entry.validator():
@@ -318,6 +329,9 @@ class ItemsOption(Option):
             values.append(
                 [t(v) for t, v in zip(self.types, cast(ItemWidget, widget).values)]
             )
+
+        if len(self.types) == 1:
+            values = [v[0] for v in values]
 
         return values
 

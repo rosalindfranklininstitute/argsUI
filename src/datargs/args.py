@@ -193,6 +193,12 @@ class Action:
     def get_display_name(self) -> str:
         return self.aliases[-1].strip("-").replace("-", " ")
 
+    def get_cli_option(self) -> str:
+        return self.aliases[-1]
+
+    def is_boolean(self) -> bool:
+        return self.action in ["store_truestore_false"]
+
 
 def parse_field(fld: Field) -> Optional[Action]:
     try:
