@@ -6,7 +6,7 @@ from pathlib import Path
 import argparse
 
 import datargs as nxargs
-from .args import arg_field, ArgType, parse_fields, add_arguments
+from .args import arg_field, ArgType, parse_fields, add_arguments, Action
 from .interactive_args import InteractiveArgs, InteractiveBase, NoInteractiveArgs
 from .config_args import ConfigFileArgs
 from .extra_types import DirPathType
@@ -157,20 +157,37 @@ def process_bulk(
     if isinstance(args_class, NoInteractiveArgs):
         new_args.append("--no-interactive")
 
+    input_cli_name = None
+    output_cli_name = None
+    for f in fields(args_class):
+        if f.name in [input_arg_name, output_arg_name]:
+            a = Action.from_field(f)
+            assert a is not None
+            if f.name == input_arg_name:
+                input_cli_name = a.get_cli_option()
+            else:
+                output_cli_name = a.get_cli_option()
+        elif input_cli_name is not None and output_cli_name is not None:
+            break
+        else:
+            continue
+    assert input_cli_name is not None
+    assert output_cli_name is not None
+
     for ii, (in_path, out_path, config_path) in enumerate(file_sets):
         # Add the input and output file args and specific config file, if appropriate.
         basic_args = [
-            f"--{input_arg_name.replace('_', '-')}",
+            input_cli_name,
             str(in_path),
-            f"--{output_arg_name.replace('_', '-')}",
+            output_cli_name,
             str(out_path),
         ]
         if config_path is not None:
             basic_args.extend(["--config", str(config_path)])
         parser = argparse.ArgumentParser(prog=prog)
         add_arguments(parser, args_class)
-        partial_args = args_class.parse_config(prog, args=ic([*basic_args, *new_args]))
-        parsed_args = parser.parse_args(args=ic(partial_args.remaining_args))
+        partial_args = args_class.parse_config(prog, args=[*basic_args, *new_args])
+        parsed_args = parser.parse_args(args=partial_args.remaining_args)
         class_args = args_class(**vars(parsed_args))
 
         # Process the file specified

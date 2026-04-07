@@ -162,6 +162,55 @@ def test_defaults(output_file):
         assert int(path.read_text()) == ii + 12
 
 
+def test_dest_aliase_mismatch(output_file):
+    @dataclass
+    class MissmatchOptions(dargs.ConfigFileArgs):
+        in_file: Path = dargs.arg_field(
+            "--input",
+            arg_type=dargs.ArgType.EXPLICIT_ONLY,
+            type=dargs.FilePathType(must_exist=False),
+            required=True,
+            default=None,
+        )
+        out_file: Path = dargs.arg_field(
+            "--output",
+            arg_type=dargs.ArgType.EXPLICIT_ONLY,
+            type=dargs.FilePathType(must_exist=False),
+            required=True,
+            default=None,
+        )
+        number: int = dargs.arg_field(default=12)
+        append: list[int] = dargs.arg_field(action="append", default_factory=list)
+        nargs: list[int] = dargs.arg_field(nargs=2, default_factory=list)
+        append_nargs: list[list[int]] = dargs.arg_field(
+            action="append", nargs=2, default_factory=list
+        )
+
+    assert len(os.listdir(output_file[0])) == 5
+    assert len(os.listdir(output_file[1])) == 0
+
+    dargs.process_bulk(
+        "basic",
+        MissmatchOptions,
+        process,
+        NumberFile(),
+        input_arg_name="in_file",
+        output_arg_name="out_file",
+        args=[
+            "--dir",
+            output_file[0].as_posix(),
+            "--output",
+            output_file[1].as_posix(),
+        ],
+    )
+    assert len(os.listdir(output_file[1])) == 5
+
+    for ii in range(5):
+        path: Path = output_file[1] / str(ii + 1) / f"test_{ii + 1}.num"
+        assert path.exists()
+        assert int(path.read_text()) == ii + 12
+
+
 def test_config(output_file, config_file):
 
     assert len(os.listdir(output_file[0])) == 5
