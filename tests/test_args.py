@@ -21,6 +21,7 @@ class BasicOptions:
     store_true: bool = dargs.arg_field(action="store_true")
     store_false: bool = dargs.arg_field(action="store_false")
     string: str = dargs.arg_field(default=None)
+    lst: list[int] = dargs.arg_field(action="append", default_factory=list)
 
 
 def process(args: BasicOptions, config: dict[str, Any]):
@@ -29,6 +30,7 @@ def process(args: BasicOptions, config: dict[str, Any]):
         fle.write(str(args.store_true) + "\n")
         fle.write(str(args.store_false) + "\n")
         fle.write(str(args.string) + "\n")
+        fle.write(",".join([str(ii) for ii in args.lst]) + "\n")
 
 
 @pytest.fixture(scope="function")
@@ -37,7 +39,7 @@ def output_file(tmp_path_factory):
     return fn
 
 
-def test_basic(output_file):
+def test_bascic(output_file):
     parser = argparse.ArgumentParser(prog="test")
     dargs.add_arguments(parser, BasicOptions)
 
@@ -51,6 +53,10 @@ def test_basic(output_file):
             "--store-false",
             "--string",
             "string",
+            "--lst",
+            "1",
+            "--lst",
+            "2",
         ]
     )
 
@@ -63,6 +69,7 @@ def test_basic(output_file):
         assert lines[1] == str(options.store_true)
         assert lines[2] == str(options.store_false)
         assert lines[3] == str(options.string)
+        assert lines[4] == "1,2"
 
 
 def test_defaults(output_file):
@@ -85,3 +92,4 @@ def test_defaults(output_file):
         assert lines[1] == str(False)
         assert lines[2] == str(True)
         assert lines[3] == str(None)
+        assert lines[4] == ""

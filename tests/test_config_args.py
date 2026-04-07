@@ -9,6 +9,8 @@ import datargs as dargs
 
 import pytest
 
+from icecream import ic
+
 
 @dataclass
 class TestArgs(dargs.ConfigFileArgs):
@@ -24,6 +26,8 @@ class TestArgs(dargs.ConfigFileArgs):
 @pytest.fixture(scope="session")
 def config_file(tmp_path_factory):
     fn = tmp_path_factory.mktemp("data") / "config.toml"
+    ic()
+    ic(fn)
     with open(fn, "w") as fle:
         fle.write("""
         [test]

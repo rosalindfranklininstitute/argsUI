@@ -26,6 +26,11 @@ class BasicOptions(dargs.ConfigFileArgs):
         type=dargs.FilePathType(must_exist=False), required=True, default=None
     )
     number: int = dargs.arg_field(default=12)
+    append: list[int] = dargs.arg_field(action="append", default_factory=list)
+    nargs: list[int] = dargs.arg_field(nargs=2, default_factory=list)
+    append_nargs: list[list[int]] = dargs.arg_field(
+        action="append", nargs=2, default_factory=list
+    )
 
 
 def process(args: BasicOptions, config: dict[str, Any]) -> None:
@@ -65,6 +70,9 @@ def config_file(tmp_path_factory):
         fle.write("""
         [bulk_basic]
         number=36
+        append=[1,2,3]
+        nargs=[1,2]
+        append-nargs=[[1,2],[2,3]]
         """)
 
     return fn
@@ -80,6 +88,7 @@ def individual_config_files(output_file):
             fle.write(f"""
             [basic]
             number={ii}
+            nargs=[1,{ii}]
             """)
     return None
 
@@ -103,6 +112,19 @@ def test_basic(output_file):
             output_file[1].as_posix(),
             "--number",
             "24",
+            "--nargs",
+            "12",
+            "13",
+            "--append",
+            "21",
+            "--append",
+            "22",
+            "--append-nargs",
+            "31",
+            "32",
+            "--append-nargs",
+            "41",
+            "42",
         ],
     )
     assert len(os.listdir(output_file[1])) == 5

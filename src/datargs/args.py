@@ -11,8 +11,6 @@ import sys
 
 from .extra_types import BaseType
 
-from icecream import ic
-
 MISSING_TYPE = type(MISSING)
 
 PossibleActions = Literal["store", "store_true", "store_false", "append"]
@@ -197,125 +195,175 @@ class Action:
         return self.aliases[-1]
 
     def is_boolean(self) -> bool:
-        return self.action in ["store_truestore_false"]
+        return self.action in ["store_true", "store_false"]
 
+    def is_default(self, value) -> bool:
+        return self.default == value
 
-def parse_field(fld: Field) -> Optional[Action]:
-    try:
-        if "arg_type" not in fld.metadata:
-            return None
-        elif fld.metadata["arg_type"] == ArgType.NOT_AN_ARG:
-            return None
-
-        action = Action()
-
-        # default
-        # default_factory
-        if fld.default != MISSING:
-            assert fld.default_factory == MISSING
-            action.default = fld.default
-        elif fld.default_factory != MISSING:
-            assert fld.default == MISSING
-            action.default = fld.default_factory()
-        else:
-            action.default = MISSING
-
-        # init
-        # repr
-        # hash
-        # compare
-        # kw_only
-        # -> ignore
-        # doc
-        assert sys.version_info.major == 3
-        if sys.version_info.minor < 14:
-            action.help = fld.metadata["doc"]
-        else:
-            action.help = fld.doc
-
-        if action.default != MISSING:
-            action.help += f"Default '{action.default}'."
-
-        # metadata
-        action.aliases = list(fld.metadata["args"])
-        action.arg_type = fld.metadata["arg_type"]
-        action.defer = fld.metadata["defer"]
-
-        match action.arg_type:
-            case ArgType.POSITIONAL:
-                assert len(action.aliases) == 0
-                action.aliases.append(f"{fld.name.replace('_', '-')}")
-            case ArgType.AUTOMATIC:
-                action.aliases.append(f"--{fld.name.replace('_', '-')}")
-            case ArgType.EXPLICIT_ONLY:
-                pass
-        action.dest = fld.name
-
-        kw_args = copy.copy(fld.metadata["kw_args"])
-        action.action = kw_args.get("action", "store")
-
-        if "type" in kw_args:
-            action.value_type = kw_args["type"]
-            del kw_args["type"]
-            if isinstance(action.value_type, BaseType):
-                if action.value_type.get_type() is not fld.type:
-                    raise TypeError(
-                        f'Expected "{fld.name}" of type {action.value_type} to be {action.value_type.get_type()} but found {fld.type}'
-                    )
-
-        else:
-            action.value_type = fld.type
-
-        match action.action:
-            case "store_true" | "store_false":
-                action.default = MISSING
-                action.value_type = MISSING
-                assert "nargs" not in kw_args
+    def to_cli(self, value) -> list[str]:
+        match self.action:
+            case "store_true":
+                assert isinstance(value, bool)
+                return [self.get_cli_option()] if value else []
+            case "store_false":
+                assert isinstance(value, bool)
+                return [self.get_cli_option()] if not value else []
             case "append":
+                results = []
+                for inner_value in value:
+                    if self.nargs is not None:
+                        results.extend(
+                            [self.get_cli_option(), *[str(v) for v in inner_value]]
+                        )
+                    else:
+                        results.extend([self.get_cli_option(), str(inner_value)])
+                return results
+            case _:
+                if self.nargs is not None:
+                    return [self.get_cli_option(), *[str(v) for v in value]]
+                else:
+                    return [self.get_cli_option(), str(value)]
+
+    @staticmethod
+    def from_field(fld: Field) -> Optional["Action"]:
+        try:
+            if "arg_type" not in fld.metadata:
+                return None
+            elif fld.metadata["arg_type"] == ArgType.NOT_AN_ARG:
+                return None
+
+            action = Action()
+
+            # default
+            # default_factory
+            if fld.default != MISSING:
+                assert fld.default_factory == MISSING
+                action.default = fld.default
+            elif fld.default_factory != MISSING:
+                assert fld.default == MISSING
+                action.default = fld.default_factory()
+            else:
+                action.default = MISSING
+
+            # init
+            # repr
+            # hash
+            # compare
+            # kw_only
+            # -> ignore
+            # doc
+            assert sys.version_info.major == 3
+            if sys.version_info.minor < 14:
+                action.help = fld.metadata["doc"]
+            else:
+                action.help = fld.doc
+
+            if action.default != MISSING:
+                action.help += f"Default '{action.default}'."
+
+            # metadata
+            action.aliases = list(fld.metadata["args"])
+            action.arg_type = fld.metadata["arg_type"]
+            action.defer = fld.metadata["defer"]
+
+            match action.arg_type:
+                case ArgType.POSITIONAL:
+                    assert len(action.aliases) == 0
+                    action.aliases.append(f"{fld.name.replace('_', '-')}")
+                case ArgType.AUTOMATIC:
+                    action.aliases.append(f"--{fld.name.replace('_', '-')}")
+                case ArgType.EXPLICIT_ONLY:
+                    pass
+            action.dest = fld.name
+
+            kw_args = copy.copy(fld.metadata["kw_args"])
+            action.action = kw_args.get("action", "store")
+
+            if "type" in kw_args:
+                action.value_type = kw_args["type"]
+                del kw_args["type"]
+                if isinstance(action.value_type, BaseType):
+                    if action.value_type.get_type() is not fld.type:
+                        raise TypeError(
+                            f'Expected "{fld.name}" of type {action.value_type} to be {action.value_type.get_type()} but found {fld.type}'
+                        )
+
+            else:
+                action.value_type = fld.type
+
+            match action.action:
+                case "store_true" | "store_false":
+                    action.default = MISSING
+                    action.value_type = MISSING
+                    assert "nargs" not in kw_args
+                case "append":
+                    inner_type = get_args(action.value_type)
+                    if len(inner_type) != 1:
+                        raise TypeError(
+                            f"Expected {action.dest} to have a single nested type, but found {len(inner_type)} for type {action.value_type}"
+                        )
+                    action.value_type = inner_type[0]
+                case _:
+                    pass
+
+            action.nargs = kw_args.get("nargs", None)
+            if isinstance(action.nargs, int):
+                nargs_more_than_one = action.nargs > 1
+            elif isinstance(action.nargs, str):
+                nargs_more_than_one = action.nargs == "*" or action.nargs == "+"
+            else:
+                nargs_more_than_one = False
+
+            if nargs_more_than_one:
                 inner_type = get_args(action.value_type)
                 if len(inner_type) != 1:
                     raise TypeError(
                         f"Expected {action.dest} to have a single nested type, but found {len(inner_type)} for type {action.value_type}"
                     )
                 action.value_type = inner_type[0]
-            case _:
-                pass
 
-        action.nargs = kw_args.get("nargs", None)
-        if isinstance(action.nargs, int):
-            nargs_more_than_one = action.nargs > 1
-        elif isinstance(action.nargs, str):
-            nargs_more_than_one = action.nargs == "*" or action.nargs == "+"
-        else:
-            nargs_more_than_one = False
+            action.choices = kw_args.get("choices", None)
+            if action.arg_type == ArgType.POSITIONAL:
+                assert kw_args.get("required", False) is False
+            action.required = kw_args.get("required", False)
+            action.metavar = kw_args.get("metavar", None)
 
-        if nargs_more_than_one:
-            inner_type = get_args(action.value_type)
-            if len(inner_type) != 1:
-                raise TypeError(
-                    f"Expected {action.dest} to have a single nested type, but found {len(inner_type)} for type {action.value_type}"
-                )
-            action.value_type = inner_type[0]
+            for name in action.fields():
+                if name in kw_args:
+                    del kw_args[name]
+            action.extra_kw_args = kw_args
 
-        action.choices = kw_args.get("choices", None)
-        if action.arg_type == ArgType.POSITIONAL:
-            assert kw_args.get("required", False) is False
-        action.required = kw_args.get("required", False)
-        action.metavar = kw_args.get("metavar", None)
+            return action
+        except BaseException as e:
+            raise e
+            raise RuntimeError(f"Could not process field '{fld.name}'") from e
 
-        for name in action.fields():
-            if name in kw_args:
-                del kw_args[name]
-        action.extra_kw_args = kw_args
 
-        return action
-    except BaseException as e:
-        raise e
-        raise RuntimeError(f"Could not process field '{fld.name}'") from e
+def parse_field(fld: Field) -> Optional[Action]:
+    return Action.from_field(fld)
+
+
+class ActionList(list[Action]):
+    @staticmethod
+    def from_dataclass(dcls) -> "ActionList":
+        return ActionList(
+            [f for f in [Action.from_field(f) for f in fields(dcls)] if f is not None]
+        )
+
+    def aliase_dict(self, include_short: bool = False) -> dict[str, Action]:
+        result: dict[str, Action] = {}
+        for a in self:
+            a_dict = {
+                name.strip("-"): a
+                for name in a.aliases
+                if include_short or name.startswith("--")
+            }
+            result.update(a_dict)
+        return result
 
 
 def parse_fields(dcls) -> list[Action]:
-    return [f for f in [parse_field(f) for f in fields(dcls)] if f is not None]
+    return [a for a in ActionList.from_dataclass(dcls)]
 
 
 def add_argument(parser: argparse.ArgumentParser, fld: Field | Action):

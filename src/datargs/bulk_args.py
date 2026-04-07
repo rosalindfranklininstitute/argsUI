@@ -148,18 +148,15 @@ def process_bulk(
     new_args: list[str] = []
     for action in parse_fields(bulk_cls):
         value = getattr(process_args, action.dest)
-        if value == action.default:
-            continue
-        if action.dest == "interactive":
+        if action.is_default(value):
             continue
         if action.dest in ["interactive", "in_path", "out_path", "config_name"]:
             continue
-        new_args.append(action.get_cli_option())
-        if not action.is_boolean():
-            new_args.append(str(value))
+        new_args.extend(action.to_cli(value))
 
     if isinstance(args_class, NoInteractiveArgs):
         new_args.append("--no-interactive")
+
     for ii, (in_path, out_path, config_path) in enumerate(file_sets):
         # Add the input and output file args and specific config file, if appropriate.
         basic_args = [
@@ -172,8 +169,8 @@ def process_bulk(
             basic_args.extend(["--config", str(config_path)])
         parser = argparse.ArgumentParser(prog=prog)
         add_arguments(parser, args_class)
-        partial_args = args_class.parse_config(prog, args=[*basic_args, *new_args])
-        parsed_args = parser.parse_args(args=partial_args.remaining_args)
+        partial_args = args_class.parse_config(prog, args=ic([*basic_args, *new_args]))
+        parsed_args = parser.parse_args(args=ic(partial_args.remaining_args))
         class_args = args_class(**vars(parsed_args))
 
         # Process the file specified
