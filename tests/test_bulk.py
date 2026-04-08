@@ -7,14 +7,17 @@ from dataclasses import dataclass
 from pathlib import Path
 import argparse
 import os
+from enum import Enum
 
 import datargs as dargs
 
 import pytest
 
-from icecream import install
 
-install()
+class EnumValue(Enum):
+    FIRST = "first"
+    SECOND = "second"
+    THIRD = "third"
 
 
 @dataclass
@@ -31,6 +34,7 @@ class BasicOptions(dargs.ConfigFileArgs):
     append_nargs: list[list[int]] = dargs.arg_field(
         action="append", nargs=2, default_factory=list
     )
+    choice: EnumValue = dargs.arg_field(default=EnumValue.FIRST)
 
 
 def process(args: BasicOptions, config: dict[str, Any]) -> None:
@@ -73,6 +77,7 @@ def config_file(tmp_path_factory):
         append=[1,2,3]
         nargs=[1,2]
         append-nargs=[[1,2],[2,3]]
+        choice='third'
         """)
 
     return fn
@@ -125,6 +130,8 @@ def test_basic(output_file):
             "--append-nargs",
             "41",
             "42",
+            "--choice",
+            "second",
         ],
     )
     assert len(os.listdir(output_file[1])) == 5

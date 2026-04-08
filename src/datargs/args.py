@@ -6,7 +6,7 @@ import copy
 from typing import Any, get_args, NamedTuple, Optional, Literal, Self
 import argparse
 from dataclasses import field, Field, MISSING, fields, dataclass, is_dataclass
-from enum import Enum
+from enum import EnumType, Enum
 import sys
 
 from .extra_types import BaseType
@@ -200,6 +200,15 @@ class Action:
     def is_default(self, value) -> bool:
         return self.default == value
 
+    def _value_to_str(self, value):
+        match type(value):
+            case EnumType():
+                return str(value.value)
+            case str():
+                return value
+            case _:
+                return str(value)
+
     def to_cli(self, value) -> list[str]:
         match self.action:
             case "store_true":
@@ -213,16 +222,24 @@ class Action:
                 for inner_value in value:
                     if self.nargs is not None:
                         results.extend(
-                            [self.get_cli_option(), *[str(v) for v in inner_value]]
+                            [
+                                self.get_cli_option(),
+                                *[self._value_to_str(v) for v in inner_value],
+                            ]
                         )
                     else:
-                        results.extend([self.get_cli_option(), str(inner_value)])
+                        results.extend(
+                            [self.get_cli_option(), self._value_to_str(inner_value)]
+                        )
                 return results
             case _:
                 if self.nargs is not None:
-                    return [self.get_cli_option(), *[str(v) for v in value]]
+                    return [
+                        self.get_cli_option(),
+                        *[self._value_to_str(v) for v in value],
+                    ]
                 else:
-                    return [self.get_cli_option(), str(value)]
+                    return [self.get_cli_option(), self._value_to_str(value)]
 
     @staticmethod
     def from_field(fld: Field) -> Optional["Action"]:
@@ -291,6 +308,28 @@ class Action:
             else:
                 action.value_type = fld.type
 
+            if isinstance(action.value_type, EnumType):
+                members = set(list(action.value_type))
+                if "choices" in kw_args:
+                    if not set(kw_args["choices"]) <= members:
+                        raise TypeError(
+                            f"Expected choices of '{action.dest}' to be a subset of the Enum {action.value_type}"
+                        )
+                    action.choices = kw_args["choices"]
+                    del kw_args["choices"]
+                else:
+                    action.choices = list(action.value_type)
+            else:
+                action.choices = kw_args.get("choices", None)
+            if (
+                action.choices is not None
+                and action.default != MISSING
+                and action.default not in action.choices
+            ):
+                raise TypeError(
+                    f"Expected '{action.default}' to be a valid choice for '{action.dest}'"
+                )
+
             match action.action:
                 case "store_true" | "store_false":
                     action.default = MISSING
@@ -322,7 +361,6 @@ class Action:
                     )
                 action.value_type = inner_type[0]
 
-            action.choices = kw_args.get("choices", None)
             if action.arg_type == ArgType.POSITIONAL:
                 assert kw_args.get("required", False) is False
             action.required = kw_args.get("required", False)

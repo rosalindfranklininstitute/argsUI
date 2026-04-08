@@ -4,10 +4,16 @@
 
 from dataclasses import dataclass, MISSING, fields
 from pathlib import Path
+from enum import Enum
 
 import datargs as dargs
 
 import pytest
+
+from icecream import install, ic
+
+install()
+ic.disable()
 
 
 def test_store_bool():
@@ -97,3 +103,45 @@ def test_types():
 
         assert action.value_type == types[action.dest]
         assert action.aliases[0] == f"--{action.dest.replace('_', '-')}"
+
+
+def test_enums():
+    ic.enable()
+    try:
+
+        class EnumValue(Enum):
+            FIRST = 1
+            SECOND = 2
+            THIRD = 2
+
+        @dataclass
+        class ValidOptions:
+            complete: EnumValue = dargs.arg_field(action="store")
+            partial: EnumValue = dargs.arg_field(
+                action="store", choices=[EnumValue.FIRST, EnumValue.THIRD]
+            )
+
+        for field in fields(ValidOptions):
+            action = dargs.parse_field(field)
+            assert action is not None
+            assert action.value_type is EnumValue
+            assert action.choices is not None
+            if action.dest == "complete":
+                assert action.choices == [t for t in EnumValue]
+            else:
+                assert len(action.choices) == 2
+
+        @dataclass
+        class InvalidOptions:
+            store: EnumValue = dargs.arg_field(action="store", default=17)
+            store: EnumValue = dargs.arg_field(
+                action="store", choices=[EnumValue.FIRST, 17]
+            )
+
+        for field in fields(InvalidOptions):
+            with pytest.raises(TypeError):
+                dargs.parse_field(field)
+    except:
+        raise
+    finally:
+        ic.disable()
