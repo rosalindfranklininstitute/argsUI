@@ -119,7 +119,7 @@ def process_bulk(
         relative_path = file_path.relative_to(process_args.in_path).parent
         out_folder = process_args.out_path / relative_path
         if not out_folder.exists():
-            out_folder.mkdir()
+            out_folder.mkdir(parents=True)
         out_path = out_folder / file_details.target_name(out_folder / file_path.name)
         file_name = file_path.name
         if file_name not in names:
@@ -191,7 +191,6 @@ def process_bulk(
         class_args = args_class(**vars(parsed_args))
 
         # Process the file specified
-        print()
         print(f"Processing file {ii + 1}: {in_path}.")
         process_func(class_args, partial_args.config)
         print()

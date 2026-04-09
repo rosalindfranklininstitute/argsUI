@@ -184,7 +184,7 @@ class Action:
         add_if_not("nargs", None)
         add_if_not("choices", None)
         add_if_not("metavar", None)
-        for k, v in self.extra_kw_args:
+        for k, v in self.extra_kw_args.items():
             result[k] = v
         return result
 
