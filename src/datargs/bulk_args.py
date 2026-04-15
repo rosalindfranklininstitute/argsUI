@@ -64,6 +64,11 @@ class ProcessArgs(ConfigFileArgs):
         type=DirPathType(True),
     )
 
+    flatten_output: bool = arg_field(
+        action="store_true",
+        doc="If present the output will not be grouped into folders, but left flay in out_path.",
+    )
+
     config_name: list[str] = arg_field(
         doc="The possible names of config files.", action="append", default_factory=list
     )
@@ -117,7 +122,10 @@ def process_bulk(
         if not file_details.filter(file_path):
             continue
         relative_path = file_path.relative_to(process_args.in_path).parent
-        out_folder = process_args.out_path / relative_path
+        if process_args.flatten_output:
+            out_folder = process_args.out_path
+        else:
+            out_folder = process_args.out_path / relative_path
         if not out_folder.exists():
             out_folder.mkdir(parents=True)
         out_path = out_folder / file_details.target_name(out_folder / file_path.name)
@@ -150,7 +158,13 @@ def process_bulk(
         value = getattr(process_args, action.dest)
         if action.is_default(value):
             continue
-        if action.dest in ["interactive", "in_path", "out_path", "config_name"]:
+        if action.dest in [
+            "interactive",
+            "in_path",
+            "out_path",
+            "config_name",
+            "flatten_output",
+        ]:
             continue
         new_args.extend(action.to_cli(value))
 
