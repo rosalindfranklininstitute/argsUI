@@ -31,7 +31,7 @@ from .extra_types import FilePathType, DirPathType
 
 
 class Option(ABC):
-    def __init__(self, name, parent: QtWidgets.QWidget):
+    def __init__(self, name: str, doc: str, parent: QtWidgets.QWidget):
         self.name = name
         self.parent = parent
 
@@ -56,17 +56,24 @@ class Option(ABC):
 
 class FolderOption(Option):
     def __init__(
-        self, name, path_type: FilePathType | DirPathType, parent: QtWidgets.QWidget
+        self,
+        name,
+        doc,
+        path_type: FilePathType | DirPathType,
+        parent: QtWidgets.QWidget,
     ):
-        super().__init__(name, parent)
+        super().__init__(name, doc, parent)
 
         self.path_type = path_type
         self.label = QtWidgets.QLabel(f"{self.name}:")
+        self.label.setToolTip(doc)
 
         self.entry = QtWidgets.QLineEdit()
         self.entry.setReadOnly(True)
+        self.entry.setToolTip(doc)
 
         self.button = QtWidgets.QPushButton("Browse...")
+        self.button.setToolTip(doc)
 
         self.button.clicked.connect(self._browse)
         self.selected = False
@@ -111,16 +118,18 @@ class FolderOption(Option):
 
 
 class ChoicesOption(Option):
-    def __init__(self, name, choices: list, parent: QtWidgets.QWidget):
-        super().__init__(name, parent)
+    def __init__(self, name, doc, choices: list, parent: QtWidgets.QWidget):
+        super().__init__(name, doc, parent)
 
         self.choices = choices
 
         self.label = QtWidgets.QLabel(f"{self.name}:")
+        self.label.setToolTip(doc)
 
         self.combo_box = QtWidgets.QComboBox()
         self.combo_box.addItems([str(c) for c in choices])
         self.combo_box.setCurrentIndex(0)
+        self.combo_box.setToolTip(doc)
 
     def get_parts(self) -> tuple[QtWidgets.QWidget, ...]:
         return self.label, self.combo_box
@@ -142,11 +151,12 @@ class ChoicesOption(Option):
 
 
 class BoolOption(Option):
-    def __init__(self, name, default: bool, parent: QtWidgets.QWidget):
-        super().__init__(name, parent)
+    def __init__(self, name, doc, default: bool, parent: QtWidgets.QWidget):
+        super().__init__(name, doc, parent)
 
         self.check_box = QtWidgets.QCheckBox(f"{self.name}")
         self.check_box.setChecked(default)
+        self.check_box.setToolTip(doc)
 
     def get_parts(self) -> tuple[QtWidgets.QWidget, ...]:
         return (self.check_box,)
@@ -180,14 +190,17 @@ def add_validator_for_type(typ: type, entry: QtWidgets.QLineEdit):
 
 class InputOption(Option):
     def __init__(
-        self, name, value_type: type, required: bool, parent: QtWidgets.QWidget
+        self, name, doc, value_type: type, required: bool, parent: QtWidgets.QWidget
     ):
-        super().__init__(name, parent)
+        super().__init__(name, doc, parent)
 
         self.label = QtWidgets.QLabel(f"{self.name}:")
         self.entry = QtWidgets.QLineEdit()
         self.value_type = value_type
         self.required = required
+
+        self.label.setToolTip(doc)
+        self.entry.setToolTip(doc)
 
         add_validator_for_type(value_type, self.entry)
 
@@ -246,24 +259,33 @@ class ItemWidget(QtWidgets.QWidget):
 
 class ItemsOption(Option):
     def __init__(
-        self, name, types: list[type], expected_height: int, parent: QtWidgets.QWidget
+        self,
+        name,
+        doc,
+        types: list[type],
+        expected_height: int,
+        parent: QtWidgets.QWidget,
     ):
-        super().__init__(name, parent)
+        super().__init__(name, doc, parent)
 
         self.types = types
         self.expected_height = expected_height
         self.input_layout = QtWidgets.QHBoxLayout()
         self.label = QtWidgets.QLabel(f"{self.name}:")
+        self.label.setToolTip(doc)
         self.entries = [QtWidgets.QLineEdit() for v in self.types]
         for entry, t in zip(self.entries, self.types):
             entry.setPlaceholderText("Type an item and press + or Enter")
+            entry.setToolTip(doc)
             add_validator_for_type(t, entry)
             self.input_layout.addWidget(entry)
         self.add_button = QtWidgets.QPushButton("+")
         self.add_button.setFixedWidth(30)
+        self.add_button.setToolTip(f"Add {name}")
         self.input_layout.addWidget(self.add_button)
 
         self.list_widget = QtWidgets.QListWidget()
+        self.list_widget.setToolTip(doc)
 
         self.add_button.clicked.connect(self._add_item_from_entries)
 
@@ -365,6 +387,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def add_argument(self, action: Action):
         name = action.get_display_name()
+        doc = action.help
 
         assert action.dest not in self._actions
 
@@ -372,9 +395,9 @@ class MainWindow(QtWidgets.QWidget):
             case "store":
                 if action.choices is None:
                     if action.value_type is Path:
-                        option = FolderOption(name, FilePathType(False), self)
+                        option = FolderOption(name, doc, FilePathType(False), self)
                     elif isinstance(action.value_type, FilePathType | DirPathType):
-                        option = FolderOption(name, action.value_type, self)
+                        option = FolderOption(name, doc, action.value_type, self)
                     else:
                         assert (
                             action.value_type is int
@@ -382,16 +405,16 @@ class MainWindow(QtWidgets.QWidget):
                             or action.value_type is str
                         ), f"Type not recognised for store: {action.value_type}"
                         option = InputOption(
-                            name, action.value_type, action.required, self
+                            name, doc, action.value_type, action.required, self
                         )
                 else:
-                    option = ChoicesOption(name, action.choices, self)
+                    option = ChoicesOption(name, doc, action.choices, self)
             case "store_true":
-                option = BoolOption(name, False, self)
+                option = BoolOption(name, doc, False, self)
             case "store_false":
                 if name.startswith("no "):
                     name = name[3:]
-                option = BoolOption(name, True, self)
+                option = BoolOption(name, doc, True, self)
             case "append":
                 types: list[type] = []
                 assert type(action.value_type) is not MISSING_TYPE
@@ -400,7 +423,7 @@ class MainWindow(QtWidgets.QWidget):
                     types = [action.value_type for _ in range(action.nargs)]
                 else:
                     types = [action.value_type]
-                option = ItemsOption(name, types, 3, self)
+                option = ItemsOption(name, doc, types, 3, self)
             case _:
                 return
 

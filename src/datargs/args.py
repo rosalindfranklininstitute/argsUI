@@ -179,8 +179,13 @@ class Action:
             result["dest"] = self.dest
             result["required"] = self.required
 
-        add_if_not("help", MISSING)
+        if self.help != MISSING and self.default != MISSING:
+            result["help"] = f"{self.help} Default '{self.default}'."
+        else:
+            add_if_not("help", MISSING)
+
         add_if_not("default", MISSING)
+
         add_if_not("nargs", None)
         add_if_not("choices", None)
         add_if_not("metavar", None)
@@ -274,9 +279,6 @@ class Action:
                 action.help = fld.metadata["doc"]
             else:
                 action.help = fld.doc
-
-            if action.default != MISSING:
-                action.help += f"Default '{action.default}'."
 
             # metadata
             action.aliases = list(fld.metadata["args"])

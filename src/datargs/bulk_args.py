@@ -49,7 +49,7 @@ class ProcessArgs(ConfigFileArgs):
         "--directory",
         required=True,
         arg_type=ArgType.EXPLICIT_ONLY,
-        doc="The input directory.",
+        doc="The directory to look for files to process.",
         default=None,
         type=DirPathType(True),
     )
@@ -59,18 +59,27 @@ class ProcessArgs(ConfigFileArgs):
         "--output",
         required=True,
         arg_type=ArgType.EXPLICIT_ONLY,
-        doc="The output directory.",
+        doc="The directory to put the results of processing.",
         default=None,
         type=DirPathType(True),
     )
 
     flatten_output: bool = arg_field(
         action="store_true",
-        doc="If present the output will not be grouped into folders, but left flay in out_path.",
+        doc="""
+        If false (the default) the output will be grouped into a directory structure 
+        the same as the input structure, but rooted at the output folder.
+        If true the output will not be grouped into folders, but left flat in the output folder.
+        """,
     )
 
     config_name: list[str] = arg_field(
-        doc="The possible names of config files.", action="append", default_factory=list
+        doc="""
+        The possible names of config files. 
+        If left empty a default 'config.tonl' will be used.
+        """,
+        action="append",
+        default_factory=list,
     )
 
 
