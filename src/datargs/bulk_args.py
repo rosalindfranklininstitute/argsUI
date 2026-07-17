@@ -47,6 +47,8 @@ class ProcessArgs(ConfigFileArgs):
         "-d",
         "--dir",
         "--directory",
+        "--in-path",
+        "--input",
         required=True,
         arg_type=ArgType.EXPLICIT_ONLY,
         doc="The directory to look for files to process.",
@@ -57,6 +59,7 @@ class ProcessArgs(ConfigFileArgs):
     out_path: Path = arg_field(
         "-o",
         "--output",
+        "--out-path",
         required=True,
         arg_type=ArgType.EXPLICIT_ONLY,
         doc="The directory to put the results of processing.",
@@ -194,8 +197,14 @@ def process_bulk(
             break
         else:
             continue
-    assert input_cli_name is not None
-    assert output_cli_name is not None
+    if input_cli_name is None:
+        raise ValueError(
+            f"Could not find input name in process args: '{input_arg_name}'"
+        )
+    if output_cli_name is None:
+        raise ValueError(
+            f"Could not find output name in process args: '{output_arg_name}'"
+        )
 
     for ii, (in_path, out_path, config_path) in enumerate(file_sets):
         # Add the input and output file args and specific config file, if appropriate.
