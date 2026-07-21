@@ -6,7 +6,7 @@ from pathlib import Path
 import argparse
 
 import datargs as nxargs
-from .args import arg_field, ArgType, parse_fields, add_arguments, Action
+from .args import arg_field, ArgType, Action, from_dataclass, from_field, add_arguments
 from .interactive_args import InteractiveArgs, InteractiveBase, NoInteractiveArgs
 from .config_args import ConfigFileArgs
 from .extra_types import DirPathType
@@ -166,7 +166,7 @@ def process_bulk(
 
     # Load any main config or cli args into new_args
     new_args: list[str] = []
-    for action in parse_fields(bulk_cls):
+    for action in from_dataclass(bulk_cls):
         value = getattr(process_args, action.dest)
         if action.is_default(value):
             continue
@@ -187,12 +187,12 @@ def process_bulk(
     output_cli_name = None
     for f in fields(args_class):
         if f.name in [input_arg_name, output_arg_name]:
-            a = Action.from_field(f)
+            a = from_field(f)
             assert a is not None
             if f.name == input_arg_name:
-                input_cli_name = a.get_cli_option()
+                input_cli_name = a.get_default_aliase()
             else:
-                output_cli_name = a.get_cli_option()
+                output_cli_name = a.get_default_aliase()
         elif input_cli_name is not None and output_cli_name is not None:
             break
         else:

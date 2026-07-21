@@ -4,7 +4,7 @@
 
 [project]
 name = "datargs"
-version = "0.1.0"
+version = "0.2.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
@@ -24,4 +24,12 @@ build-backend = "uv_build"
 dev = [
     "icecream>=2.1.10",
     "pytest>=9.0.2",
+    "line-profiler>=5.0.1",
+    "pytest-autoprofile>=0.19.0",
+    "pytest-cov>=7.0.0",
+    "snakeviz>=2.2.2",
 ]
+
+[tool.pytest]
+testpaths = ["./tests", "./src/"]
+addopts = ["--doctest-modules", "--cov=./src/", "--cov-report=html", "--cov-branch"]

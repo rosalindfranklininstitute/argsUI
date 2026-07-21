@@ -17,17 +17,16 @@ from icecream import ic
 
 from .args import (
     arg_field,
-    PartialParsedArgs,
-    add_argument,
-    add_arguments,
-    parse_fields,
-    parse_field,
     Action,
     MISSING_TYPE,
     ArgType,
+    add_arguments,
+    from_field,
+    from_dataclass,
 )
 
 from .extra_types import FilePathType, DirPathType
+from .dataclass_construct import build_dataclass_from_dict
 
 
 class Option(ABC):
@@ -503,15 +502,15 @@ class InteractiveBase:
         )
         for f in fields(cls):
             if f.name == "interactive":
-                action = parse_field(f)
+                action = from_field(f)
                 assert action is not None
-                add_argument(interactive_parser, action)
+                action.add_to_parser(interactive_parser)
                 break
         else:
-            raise ValueError("Expected to find and interactive field on the class.")
+            raise ValueError("Expected to find an interactive field on the class.")
         interactive_args, remaining_args = interactive_parser.parse_known_args(args)
 
-        actions = parse_fields(cls)
+        actions = from_dataclass(cls)
 
         if interactive_args.interactive:
             app = QtWidgets.QApplication(sys.argv)
@@ -526,7 +525,7 @@ class InteractiveBase:
                 window.add_argument(a)
                 not_required_a = copy.copy(a)
                 not_required_a.required = False
-                add_argument(parser, not_required_a)
+                not_required_a.add_to_parser(parser)
 
             final_args = parser.parse_args(remaining_args)
 
@@ -546,7 +545,7 @@ class InteractiveBase:
             add_arguments(parser, actions)
             final_args = vars(parser.parse_args(remaining_args))
             final_args["interactive"] = False
-        return cls(**final_args)
+        return build_dataclass_from_dict(cls, final_args)
 
 
 @dataclass

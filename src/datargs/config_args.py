@@ -9,7 +9,7 @@ from pathlib import Path
 import sys
 import tomllib
 
-from .args import arg_field, PartialParsedArgs, ActionList
+from .args import arg_field, PartialParsedArgs, from_dataclass
 
 
 @dataclass
@@ -37,7 +37,7 @@ class ConfigFileArgs:
             with open(config_args.config, "rb") as fle:
                 config_dict = tomllib.load(fle)
             if prog in config_dict:
-                action_dict = ActionList.from_dataclass(cls).aliase_dict()
+                action_dict = from_dataclass(cls).aliase_dict()
                 for k, v in config_dict[prog].items():
                     if k in action_dict:
                         config_file_args.extend(action_dict[k].to_cli(v))

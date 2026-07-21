@@ -1,12 +1,11 @@
+from enum import Enum
 import argparse
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from pathlib import Path
 
 import datargs as dargs
 
 import pytest
-
-from icecream import ic
 
 
 @pytest.fixture(scope="session")
@@ -15,6 +14,62 @@ def test_files(tmp_path_factory):
     fn.touch()
 
     return fn
+
+
+def test_types():
+    @dataclass
+    class ValidOptions:
+        int_val: int = dargs.arg_field()
+        float_val: float = dargs.arg_field()
+        bool_val: bool = dargs.arg_field()
+        str_val: str = dargs.arg_field()
+        Path_val: Path = dargs.arg_field()
+
+    types = dict(
+        int_val=int, float_val=float, bool_val=bool, str_val=str, Path_val=Path
+    )
+
+    for field in fields(ValidOptions):
+        action = dargs.from_field(field)
+        assert action is not None
+
+        assert action.value_type == types[action.dest]
+        assert action.aliases[0] == f"--{action.dest.replace('_', '-')}"
+
+
+def test_enums():
+    class EnumValue(Enum):
+        FIRST = 1
+        SECOND = 2
+        THIRD = 2
+
+    @dataclass
+    class ValidOptions:
+        complete: EnumValue = dargs.arg_field(action="store")
+        partial: EnumValue = dargs.arg_field(
+            action="store", choices=[EnumValue.FIRST, EnumValue.THIRD]
+        )
+
+    for field in fields(ValidOptions):
+        action = dargs.from_field(field)
+        assert action is not None
+        assert action.value_type is EnumValue
+        assert action.choices is not None
+        if action.dest == "complete":
+            assert action.choices == [t for t in EnumValue]
+        else:
+            assert len(action.choices) == 2
+
+    @dataclass
+    class InvalidOptions:
+        store: EnumValue = dargs.arg_field(action="store", default=17)
+        store: EnumValue = dargs.arg_field(
+            action="store", choices=[EnumValue.FIRST, 17]
+        )
+
+    for field in fields(InvalidOptions):
+        with pytest.raises(TypeError):
+            dargs.from_field(field)
 
 
 def test_file_may_not_exist(test_files):
