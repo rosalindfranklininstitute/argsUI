@@ -613,7 +613,7 @@ def _single(fld: Field, action: Action, kw_args) -> Action:
 
 
 def from_field(fld: Field) -> Optional[Action]:
-    return ic(_root(fld, parent=None, appending_parent=False))
+    return _root(fld, parent=None, appending_parent=False)
 
 
 def from_dataclass(dcls) -> ActionList:
