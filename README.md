@@ -5,13 +5,13 @@ SPDX-License-Identifier: Apache-2.0
 -->
 
 # Args UI
-![argsui-version](https://raw.githubusercontent.com/rosalindfranklininstitute/argsUI/raw/refs/heads/badges/badges/argsui-version.svg)
-![argsui-requires-python](https://raw.githubusercontent.com/rosalindfranklininstitute/argsUI/raw/refs/heads/badges/badges/argsui-requires-python.svg)
+![argsui-version](https://raw.githubusercontent.com/rosalindfranklininstitute/argsUI/badges/badges/argsui-version.svg)
+![argsui-requires-python](https://raw.githubusercontent.com/rosalindfranklininstitute/argsUI/badges/badges/argsui-requires-python.svg)
 
-![tests](https://raw.githubusercontent.com/rosalindfranklininstitute/argsUI/raw/refs/heads/badges/badges/tests.svg)
-![skipped](https://raw.githubusercontent.com/rosalindfranklininstitute/argsUI/raw/refs/heads/badges/badges/skipped.svg)
-![coverage](https://raw.githubusercontent.com/rosalindfranklininstitute/argsUI/raw/refs/heads/badges/badges/coverage.svg)
-![last-run](https://raw.githubusercontent.com/rosalindfranklininstitute/argsUI/raw/refs/heads/badges/badges/last-run.svg)
+![tests](https://raw.githubusercontent.com/rosalindfranklininstitute/argsUI/badges/badges/tests.svg)
+![skipped](https://raw.githubusercontent.com/rosalindfranklininstitute/argsUI/badges/badges/skipped.svg)
+![coverage](https://raw.githubusercontent.com/rosalindfranklininstitute/argsUI/badges/badges/coverage.svg)
+![last-run](https://raw.githubusercontent.com/rosalindfranklininstitute/argsUI/badges/badges/last-run.svg)
 
 Library for turning dataclasses into argparser args and gui.
 Inspired by [datargs](https://github.com/roee30/datargs.git) and [mininterface](https://github.com/CZ-NIC/mininterface.git).
