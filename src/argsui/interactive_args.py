@@ -43,7 +43,30 @@ if not imported_qt:
     class InteractiveBase:
         @classmethod
         def parse_interactive(cls, prog: str, exclude: list[str] = [], args=None):
-            raise RuntimeError("Did not import QT, cannot use module.")
+            args = args if args is not None else sys.argv[1:]
+            interactive_parser = argparse.ArgumentParser(
+                "interactive_parser", add_help=False
+            )
+            for f in fields(cls):
+                if f.name == "interactive":
+                    action = from_field(f)
+                    assert action is not None
+                    action.add_to_parser(interactive_parser)
+                    break
+            else:
+                raise ValueError("Expected to find an interactive field on the class.")
+            interactive_args, remaining_args = interactive_parser.parse_known_args(args)
+
+            actions = from_dataclass(cls)
+
+            if interactive_args.interactive:
+                raise RuntimeError("Did not import QT, cannot use module.")
+            else:
+                parser = argparse.ArgumentParser(prog=prog)
+                add_arguments(parser, actions)
+                final_args = vars(parser.parse_args(remaining_args))
+                final_args["interactive"] = False
+            return build_dataclass_from_dict(cls, final_args)
 
     @dataclass
     class InteractiveArgs(InteractiveBase):
