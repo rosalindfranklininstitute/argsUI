@@ -63,7 +63,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+          git status
           git switch -C "${TARGET_BRANCH}"
+          git status
           git stash push
           git pull origin main
           git stash pop
