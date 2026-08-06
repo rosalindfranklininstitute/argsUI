@@ -13,11 +13,7 @@ from .args import arg_field, ArgType, Action, from_dataclass, from_field, add_ar
 from .config_args import ConfigFileArgs
 from .extra_types import DirPathType
 
-try:
-    from .interactive_args import InteractiveArgs, InteractiveBase, NoInteractiveArgs
-except ImportError:
-    InteractiveBase = None
-    InteractiveArgs = None
+from .interactive_args import InteractiveArgs, InteractiveBase, NoInteractiveArgs
 
 from icecream import ic
 
@@ -117,9 +113,8 @@ def process_bulk(
 
     bases: list[type] = [ProcessArgs]
 
-    if InteractiveBase is not None:
-        if not isinstance(args_class, InteractiveBase):
-            bases.append(InteractiveArgs)
+    if not isinstance(args_class, InteractiveBase):
+        bases.append(InteractiveArgs)
 
     bulk_cls = make_dataclass("BulkArgs", fields=flds, bases=tuple(bases))
 

@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-import logging
-
 from .args import (
     ArgType,
     Action,
@@ -18,9 +16,4 @@ from .config_args import ConfigFileArgs
 from .extra_types import DirPathType, FilePathType
 from .bulk_args import FileDetails, process_bulk
 
-logger = logging.getLogger(__name__)
-
-try:
-    from .interactive_args import InteractiveArgs, NoInteractiveArgs
-except ImportError:
-    logger.warning("GUI Import error. InteractiveArgs will be unavalable.")
+from .interactive_args import InteractiveArgs, NoInteractiveArgs
