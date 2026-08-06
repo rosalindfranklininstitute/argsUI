@@ -26,7 +26,7 @@ jobs:
 
       - name: Run tests (with coverage + badges output)
         run: |
-          mkdir -p badges
+          mkdir badges
           uv run pytest
 
       - name: Upload HTML coverage artifact
