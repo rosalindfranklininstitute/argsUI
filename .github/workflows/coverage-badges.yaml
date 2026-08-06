@@ -71,8 +71,8 @@ jobs:
           echo ' --- After stashing'
           git stash push
           git status
-          echo ' --- After pulling main'
-          git pull origin main
+          echo ' --- After resetting to  main'
+          git reset --hard main
           git status
           echo ' --- After poping'
           git stash pop
@@ -92,4 +92,4 @@ jobs:
           git commit -m "Update badges"
           git status
           echo ' >>>'
-          git push origin "${TARGET_BRANCH}"
+          git push --force origin "${TARGET_BRANCH}"
