@@ -8,12 +8,10 @@ import sys
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import cast, Any
-from dataclasses import dataclass, fields, Field
+from dataclasses import dataclass, fields
 
-from matplotlib.widgets import Button, Slider
-from PySide6 import QtCore, QtGui, QtWidgets
-
-from icecream import ic
+from matplotlib.widgets import Button
+from PySide6 import QtGui, QtWidgets
 
 from .args import (
     arg_field,

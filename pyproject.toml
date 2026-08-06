@@ -5,7 +5,7 @@
 [project]
 name = "datargs"
 version = "0.2.0"
-description = "Add your description here"
+description = "Library for turning dataclasses into argparser args and gui."
 readme = "README.md"
 authors = [
     { name = "McDougall", email = "Duncan.McDougall@rfi.ac.uk" }
