@@ -65,7 +65,7 @@ jobs:
 
           git switch -C "${TARGET_BRANCH}"
           git stash push
-          git pull
+          git pull origin main
           git stash pop
 
           mkdir -p badges
