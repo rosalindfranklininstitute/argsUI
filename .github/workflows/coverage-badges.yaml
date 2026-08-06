@@ -51,19 +51,13 @@ jobs:
       - name: Publish badges to branch "badges"
         env:
           TARGET_BRANCH: badges
-          FILES: |
-            tests.svg
-            skipped.svg
-            coverage.svg
-            last-run.svg
-            argsui-requires-python.svg
-            argsui-version.svg
         run: |
           set -euo pipefail
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+          echo " ----- "
           git switch -C "${TARGET_BRANCH}"
           git stash push
           git reset --hard main
@@ -77,4 +71,5 @@ jobs:
           fi
 
           git commit -m "Update badges for "
+          echo " ===== "
           git push --force origin "${TARGET_BRANCH}"

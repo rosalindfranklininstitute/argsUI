@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 # Args UI
 ![argsui-version](https://raw.githubusercontent.com/rosalindfranklininstitute/argsUI/badges/badges/argsui-version.svg)
 ![argsui-requires-python](https://raw.githubusercontent.com/rosalindfranklininstitute/argsUI/badges/badges/argsui-requires-python.svg)
+![argsui-license](https://raw.githubusercontent.com/rosalindfranklininstitute/argsUI/badges/badges/argsui-license.svg)
 
 ![tests](https://raw.githubusercontent.com/rosalindfranklininstitute/argsUI/badges/badges/tests.svg)
 ![skipped](https://raw.githubusercontent.com/rosalindfranklininstitute/argsUI/badges/badges/skipped.svg)
