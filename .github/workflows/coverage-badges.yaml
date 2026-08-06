@@ -63,12 +63,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git pull origin "${TARGET_BRANCH}"
-          git status
           git switch -C "${TARGET_BRANCH}"
-          git status
-          git rebase main
-          git status
+          git stash push
+          git pull
+          git stash pop
 
           mkdir -p badges
 
