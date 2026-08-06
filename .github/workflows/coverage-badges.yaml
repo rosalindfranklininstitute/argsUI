@@ -63,7 +63,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git fetch origin "${TARGET_BRANCH}" || true
+          git pull origin "${TARGET_BRANCH}" || true
 
           git switch -C "${TARGET_BRANCH}"
 
