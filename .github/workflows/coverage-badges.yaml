@@ -9,6 +9,7 @@ permissions:
 
 jobs:
   test:
+    if: (github.event_name == 'push') && (github.ref_name != 'badges')
     runs-on: ubuntu-latest
 
     steps:
@@ -46,8 +47,6 @@ jobs:
           if-no-files-found: error
 
       - name: Publish badges to branch "badges"
-        # avoid publish loop on PRs
-        if: github.event_name == 'push'
         env:
           TARGET_BRANCH: badges
           FILES: |
@@ -89,7 +88,7 @@ jobs:
           fi
 
           echo ' --- After commit'
-          git commit -m "Update badges"
+          git commit -m "Update badges for "
           git status
           echo ' >>>'
           git push --force origin "${TARGET_BRANCH}"
