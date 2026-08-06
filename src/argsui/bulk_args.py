@@ -9,7 +9,6 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 import argparse
 
-import datargs as nxargs
 from .args import arg_field, ArgType, Action, from_dataclass, from_field, add_arguments
 from .interactive_args import InteractiveArgs, InteractiveBase, NoInteractiveArgs
 from .config_args import ConfigFileArgs

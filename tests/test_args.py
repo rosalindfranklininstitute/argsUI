@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import argparse
 
-import datargs as dargs
+import argsui as dargs
 
 import pytest
 

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 [project]
-name = "datargs"
+name = "argsui"
 version = "0.2.0"
 description = "Library for turning dataclasses into argparser args and gui."
 readme = "README.md"
@@ -32,4 +32,9 @@ dev = [
 
 [tool.pytest]
 testpaths = ["./tests", "./src/"]
-addopts = ["--doctest-modules", "--cov=./src/", "--cov-report=html", "--cov-branch"]
+addopts = [
+    "--doctest-modules", 
+    "--cov=./src/", 
+    "--cov-report=html", 
+    "--cov-branch", 
+]

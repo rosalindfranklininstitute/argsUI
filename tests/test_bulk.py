@@ -9,7 +9,7 @@ import argparse
 import os
 from enum import Enum
 
-import datargs as dargs
+import argsui as dargs
 
 import pytest
 

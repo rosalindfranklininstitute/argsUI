@@ -5,7 +5,7 @@
 import argparse
 from dataclasses import dataclass
 
-import datargs as dargs
+import argsui as dargs
 
 import pytest
 

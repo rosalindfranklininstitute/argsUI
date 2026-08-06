@@ -4,7 +4,7 @@
 
 from dataclasses import dataclass, MISSING, fields
 
-import datargs as dargs
+import argsui as dargs
 
 import pytest
 
