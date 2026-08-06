@@ -63,21 +63,33 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+          echo ' --- Initial'
           git status
+          echo ' --- After Switch'
           git switch -C "${TARGET_BRANCH}"
           git status
+          echo ' --- After stashing'
           git stash push
+          git status
+          echo ' --- After pulling main'
           git pull origin main
+          git status
+          echo ' --- After poping'
           git stash pop
+          git status
 
-          mkdir -p badges
 
+          echo ' --- After adding'
           git add -A -f badges
+          git status
 
           if git diff --cached --quiet; then
             echo "No badge changes to publish."
             exit 0
           fi
 
+          echo ' --- After commit'
           git commit -m "Update badges"
+          git status
+          echo ' >>>'
           git push origin "${TARGET_BRANCH}"
