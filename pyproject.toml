@@ -4,7 +4,7 @@
 
 [project]
 name = "argsui"
-version = "0.2.0"
+version = "0.2.1"
 description = "Library for turning dataclasses into argparser args and gui."
 readme = "README.md"
 authors = [
@@ -56,7 +56,7 @@ ignore=["C408", "S311", "PTH123", "NPY002", "D203", "D205", "D212", "B006", "ARG
 "tests/**/*" = ["ANN", "S101"]
 
 [tool.bumpversion]
-current_version = "0.2.0"
+current_version = "0.2.1"
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
 serialize = ["{major}.{minor}.{patch}"]
 search = "{current_version}"
