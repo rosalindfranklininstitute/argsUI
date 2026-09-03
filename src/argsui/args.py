@@ -1,19 +1,16 @@
 # SPDX-FileCopyrightText: 2026 Duncan McDougall <duncan.mcdougall@rfi.ac.uk>
 #
 # SPDX-License-Identifier: Apache-2.0
-import itertools
-
-import copy
-from typing import Any, get_args, NamedTuple, Optional, Literal, Self, Type, TypeVar
 import argparse
-from dataclasses import field, Field, MISSING, fields, dataclass, is_dataclass
-from enum import EnumType, Enum
+import copy
+import itertools
 import sys
+from dataclasses import MISSING, Field, field, fields, is_dataclass
+from enum import Enum, EnumType
+from typing import Any, Literal, NamedTuple, TypeVar, get_args
 
-from .extra_types import BaseType
 from .dataclass_construct import build_dataclass_from_dict
-
-from icecream import ic
+from .extra_types import BaseType
 
 T = TypeVar("T")
 
@@ -34,12 +31,14 @@ class PartialParsedArgs(NamedTuple):
     config: dict[str, Any]
 
 
-def no_arg_field(**kw_args):
+def no_arg_field(**kw_args) -> Any:
     kw_args.update(dict(metadata=dict(arg_type=ArgType.NOT_AN_ARG)))
     return field(**kw_args)
 
 
-def arg_field(*args, arg_type: ArgType = ArgType.AUTOMATIC, defer=False, **kw_args):
+def arg_field(
+    *args, arg_type: ArgType = ArgType.AUTOMATIC, defer=False, **kw_args
+) -> Any:
 
     field_keys = (
         "default",
@@ -80,10 +79,6 @@ def arg_field(*args, arg_type: ArgType = ArgType.AUTOMATIC, defer=False, **kw_ar
         else:
             kw_args["doc"] = ""
 
-    #     field_kw_args.update(kw_args)
-    # else:
-    #     field_kw_args["metadata"] = kw_args
-
     field_kw_args["metadata"]["args"] = args
     field_kw_args["metadata"]["arg_type"] = arg_type
     field_kw_args["metadata"]["defer"] = defer
@@ -119,7 +114,7 @@ class Action:
         self.extra_kw_args: dict[str, Any] = dict()
 
         self.is_parent: bool = False
-        self.children: list["Action"] = []
+        self.children: list[Action] = []
 
         self.has_appending_parent: bool = False
 
@@ -175,15 +170,13 @@ class Action:
         )
 
     def __repr__(self) -> str:
-        parts = []
-        for k in self.fields():
-            parts.append(f"{k}={self[k]}")
+        parts = [f"{k}={self[k]}" for k in self.fields()]
         return f"Action( {', '.join(parts)})"
 
     def _to_append_argument_kwargs(self) -> dict[str, Any]:
         result: dict[str, Any] = {}
 
-        def add_if_not(key, filter_value):
+        def add_if_not(key, filter_value) -> None:
             if self[key] != filter_value:
                 result[key] = self[key]
 
@@ -211,15 +204,13 @@ class Action:
         add_if_not("nargs", None)
         add_if_not("choices", None)
         add_if_not("metavar", None)
-        for k, v in self.extra_kw_args.items():
-            result[k] = v
-
+        result.update(self.extra_kw_args)
         return result
 
     def _to_argument_kwargs(self) -> dict[str, Any]:
         result: dict[str, Any] = dict(action=self.action)
 
-        def add_if_not(key, filter_value):
+        def add_if_not(key, filter_value) -> None:
             if self[key] != filter_value:
                 result[key] = self[key]
 
@@ -241,8 +232,7 @@ class Action:
         add_if_not("nargs", None)
         add_if_not("choices", None)
         add_if_not("metavar", None)
-        for k, v in self.extra_kw_args.items():
-            result[k] = v
+        result.update(self.extra_kw_args)
         return result
 
     def get_default_aliase(self) -> str:
@@ -250,9 +240,6 @@ class Action:
 
     def get_display_name(self) -> str:
         return self.get_default_aliase().strip("-").replace("-", " ")
-
-    # def is_boolean(self) -> bool:
-    #     return self.action in ["store_true", "store_false"]
 
     def is_default(self, value) -> bool:
         """
@@ -264,11 +251,10 @@ class Action:
         if self.default == MISSING:
             if self.action in ["store_true", "store_false"]:
                 return self.action == "store_false"
-            else:
-                raise ValueError("Missing default requested.")
+            raise ValueError("Missing default requested.")
         return self.default
 
-    def _value_to_str(self, value):
+    def _value_to_str(self, value) -> str:
         match type(value):
             case EnumType():
                 return str(value.value)
@@ -306,8 +292,7 @@ class Action:
                         self.get_default_aliase(),
                         *[self._value_to_str(v) for v in value],
                     ]
-                else:
-                    return [self.get_default_aliase(), self._value_to_str(value)]
+                return [self.get_default_aliase(), self._value_to_str(value)]
 
     def _child_alaises(
         self, short_aliases: list[str], long_aliases: list[str], child: "Action"
@@ -332,13 +317,12 @@ class Action:
     def all_aliases(self) -> list[str]:
         if not self.is_parent:
             return self.aliases
-        else:
-            short_aliases = [a for a in self.aliases if a[0] == "-" and a[1] != "-"]
-            long_aliases = [a for a in self.aliases if a[0:2] == "--"]
-            aliases = []
-            for child in self.children:
-                aliases.extend(self._child_alaises(short_aliases, long_aliases, child))
-            return aliases
+        short_aliases = [a for a in self.aliases if a[0] == "-" and a[1] != "-"]
+        long_aliases = [a for a in self.aliases if a[0:2] == "--"]
+        aliases = []
+        for child in self.children:
+            aliases.extend(self._child_alaises(short_aliases, long_aliases, child))
+        return aliases
 
     def add_to_parser(self, parser, override_alaises: list[str] | None = None) -> list:
         results = []
@@ -363,11 +347,10 @@ class Action:
     def dist_dict(self) -> dict[str, Any]:
         if not self.is_parent:
             return {self.dest: self}
-        else:
-            result = {}
-            for child in self.children:
-                result.update(child.dist_dict())
-            return result
+        result = {}
+        for child in self.children:
+            result.update(child.dist_dict())
+        return result
 
 
 class ActionList(list[Action]):
@@ -421,12 +404,12 @@ def _process_root_action(action, kw_args) -> Action:
     return action
 
 
-def _check_child_action(action, kw_args):
+def _check_child_action(action, kw_args) -> None:
     if isinstance(action.nargs, str) and (action.nargs == "*" or action.nargs == "+"):
         raise TypeError("variable nargs cannot be specified on a child property.")
 
 
-def _check_nested_append_action(parent, action, kw_args):
+def _check_nested_append_action(parent, action, kw_args) -> None:
     if action.required:
         raise NotImplementedError("Required nested fields are not supported.")
 
@@ -439,109 +422,99 @@ def _check_nested_append_action(parent, action, kw_args):
             pass
 
 
-def _root(
-    fld: Field, parent: Action | None, appending_parent: bool
-) -> Optional[Action]:
-    try:
-        if "arg_type" not in fld.metadata:
-            return None
-        elif fld.metadata["arg_type"] == ArgType.NOT_AN_ARG:
-            return None
+def _root(fld: Field, parent: Action | None, appending_parent: bool) -> Action | None:
+    if "arg_type" not in fld.metadata or fld.metadata["arg_type"] == ArgType.NOT_AN_ARG:
+        return None
 
-        action = Action()
+    action = Action()
 
-        # default
-        # default_factory
-        if fld.default != MISSING:
-            assert fld.default_factory == MISSING
-            action.default = fld.default
-        elif fld.default_factory != MISSING:
-            assert fld.default == MISSING
-            action.default = fld.default_factory()
-        else:
-            action.default = MISSING
+    # default
+    # default_factory
+    if fld.default != MISSING:
+        assert fld.default_factory == MISSING
+        action.default = fld.default
+    elif fld.default_factory != MISSING:
+        assert fld.default == MISSING
+        action.default = fld.default_factory()
+    else:
+        action.default = MISSING
 
-        # init
-        # repr
-        # hash
-        # compare
-        # kw_only
-        # -> ignore
-        # doc
-        assert sys.version_info.major == 3
-        if sys.version_info.minor < 14:
-            action.help = fld.metadata["doc"]
-        else:
-            action.help = fld.doc
+    # init
+    # repr
+    # hash
+    # compare
+    # kw_only
+    # -> ignore
+    # doc
+    assert sys.version_info.major == 3
+    if sys.version_info.minor < 14:
+        action.help = fld.metadata["doc"]
+    else:
+        action.help = fld.doc
 
-        # metadata
-        action.aliases = list(fld.metadata["args"])
-        action.arg_type = fld.metadata["arg_type"]
-        action.defer = fld.metadata["defer"]
+    # metadata
+    action.aliases = list(fld.metadata["args"])
+    action.arg_type = fld.metadata["arg_type"]
+    action.defer = fld.metadata["defer"]
 
-        if parent is not None and action.arg_type != ArgType.AUTOMATIC:
-            raise TypeError("arg_type must be AUTOMATIC fro nested fields.")
+    if parent is not None and action.arg_type != ArgType.AUTOMATIC:
+        raise TypeError("arg_type must be AUTOMATIC fro nested fields.")
 
-        match action.arg_type:
-            case ArgType.POSITIONAL:
-                assert len(action.aliases) == 0
-                action.aliases.append(f"{fld.name.replace('_', '-')}")
-            case ArgType.AUTOMATIC:
-                action.aliases.append(f"--{fld.name.replace('_', '-')}")
-            case ArgType.EXPLICIT_ONLY:
-                pass
+    match action.arg_type:
+        case ArgType.POSITIONAL:
+            assert len(action.aliases) == 0
+            action.aliases.append(f"{fld.name.replace('_', '-')}")
+        case ArgType.AUTOMATIC:
+            action.aliases.append(f"--{fld.name.replace('_', '-')}")
+        case ArgType.EXPLICIT_ONLY:
+            pass
 
-        if parent is not None:
-            action.dest = f"{parent.dest}.{fld.name}"
-        else:
-            action.dest = fld.name
+    if parent is not None:
+        action.dest = f"{parent.dest}.{fld.name}"
+    else:
+        action.dest = fld.name
 
-        kw_args = copy.copy(fld.metadata["kw_args"])
-        action.action = kw_args.get("action", "store")
+    kw_args = copy.copy(fld.metadata["kw_args"])
+    action.action = kw_args.get("action", "store")
 
-        if "type" in kw_args:
-            action.value_type = kw_args["type"]
-            del kw_args["type"]
+    if "type" in kw_args:
+        action.value_type = kw_args["type"]
+        del kw_args["type"]
 
-        else:
-            action.value_type = fld.type
+    else:
+        action.value_type = fld.type
 
-        action = _process_root_action(action, kw_args)
+    action = _process_root_action(action, kw_args)
 
-        action.nargs = kw_args.get("nargs", None)
-        if isinstance(action.nargs, int):
-            nargs_more_than_one = action.nargs > 1
-        elif isinstance(action.nargs, str):
-            nargs_more_than_one = action.nargs == "*" or action.nargs == "+"
-        else:
-            nargs_more_than_one = False
+    action.nargs = kw_args.get("nargs", None)
+    if isinstance(action.nargs, int):
+        nargs_more_than_one = action.nargs > 1
+    elif isinstance(action.nargs, str):
+        nargs_more_than_one = action.nargs == "*" or action.nargs == "+"
+    else:
+        nargs_more_than_one = False
 
-        if nargs_more_than_one:
-            inner_type = get_args(action.value_type)
-            if len(inner_type) != 1:
-                raise TypeError(
-                    f"Expected {action.dest} to have a single nested type, but found {len(inner_type)} for type {action.value_type}"
-                )
-            action.value_type = inner_type[0]
+    if nargs_more_than_one:
+        inner_type = get_args(action.value_type)
+        if len(inner_type) != 1:
+            raise TypeError(
+                f"Expected {action.dest} to have a single nested type, but found {len(inner_type)} for type {action.value_type}"
+            )
+        action.value_type = inner_type[0]
 
-        if parent is not None:
-            _check_child_action(action, kw_args)
+    if parent is not None:
+        _check_child_action(action, kw_args)
 
-        if appending_parent:
-            _check_nested_append_action(parent, action, kw_args)
-            action.has_appending_parent = True
+    if appending_parent:
+        _check_nested_append_action(parent, action, kw_args)
+        action.has_appending_parent = True
 
-        if is_dataclass(action.value_type):
-            appending_parent = appending_parent or (action.action == "append")
-            action.children = _children(fld, action, appending_parent, kw_args)
-            action.is_parent = True
-            return action
-        else:
-            return _single(fld, action, kw_args)
-
-    except BaseException as e:
-        raise e
-    raise RuntimeError(f"Could not process field '{fld.name}'") from e
+    if is_dataclass(action.value_type):
+        appending_parent = appending_parent or (action.action == "append")
+        action.children = _children(fld, action, appending_parent, kw_args)
+        action.is_parent = True
+        return action
+    return _single(fld, action, kw_args)
 
 
 def _children(
@@ -570,13 +543,15 @@ def _children(
 
 def _single(fld: Field, action: Action, kw_args) -> Action:
 
-    if isinstance(action.value_type, BaseType):
-        if action.value_type.get_type() is not fld.type:
-            raise TypeError(
-                f'Expected "{fld.name}" of type {action.value_type} to be {action.value_type.get_type()} but found {fld.type}'
-            )
+    if (
+        isinstance(action.value_type, BaseType)
+        and action.value_type.get_type() is not fld.type
+    ):
+        raise TypeError(
+            f'Expected "{fld.name}" of type {action.value_type} to be {action.value_type.get_type()} but found {fld.type}'
+        )
     if isinstance(action.value_type, EnumType):
-        members = set(list(action.value_type))
+        members = set(action.value_type)
         if "choices" in kw_args:
             if not set(kw_args["choices"]) <= members:
                 raise TypeError(
@@ -612,7 +587,7 @@ def _single(fld: Field, action: Action, kw_args) -> Action:
     return action
 
 
-def from_field(fld: Field) -> Optional[Action]:
+def from_field(fld: Field) -> Action | None:
     return _root(fld, parent=None, appending_parent=False)
 
 
@@ -622,11 +597,9 @@ def from_dataclass(dcls) -> ActionList:
     )
 
 
-def add_arguments(parser: argparse.ArgumentParser, dcls: type | list[Action]):
-    if isinstance(dcls, type):
-        actions = from_dataclass(dcls)
-    else:
-        actions = dcls
+def add_arguments(parser: argparse.ArgumentParser, dcls: type | list[Action]) -> None:
+
+    actions = from_dataclass(dcls) if isinstance(dcls, type) else dcls
     defered = []
     for a in actions:
         if a.defer:
@@ -637,7 +610,7 @@ def add_arguments(parser: argparse.ArgumentParser, dcls: type | list[Action]):
         a.add_to_parser(parser)
 
 
-def _recursively_group_and_invert(evaluation_dict, actions, prefix):
+def _recursively_group_and_invert(evaluation_dict, actions, prefix) -> dict[str, Any]:
     dest_to_action = {a.dest[len(prefix) :]: a for a in actions}
     dest_to_sub_dict = {}
     keys_to_reevaluate = set()
@@ -681,7 +654,7 @@ def _recursively_group_and_invert(evaluation_dict, actions, prefix):
     return dest_to_sub_dict
 
 
-def from_arguments(args: argparse.Namespace, dcls: Type[T]) -> T:
+def from_arguments(args: argparse.Namespace, dcls: type[T]) -> T:
     actions = from_dataclass(dcls)
 
     data_dict = _recursively_group_and_invert(vars(args), actions, "")

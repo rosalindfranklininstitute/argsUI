@@ -2,16 +2,13 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import Any
-from dataclasses import dataclass, fields
-from pathlib import Path
 import argparse
-
-import argsui as dargs
+from dataclasses import dataclass
+from pathlib import Path
 
 import pytest
 
-from icecream import ic
+import argsui as dargs
 
 
 @dataclass
@@ -34,7 +31,7 @@ class OuterOptions:
     nested: BasicOptions = dargs.arg_field(default_factory=BasicOptions)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def output_file(tmp_path_factory):
     fn = tmp_path_factory.mktemp("data") / "output.txt"
     return fn

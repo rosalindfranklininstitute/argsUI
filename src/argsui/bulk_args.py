@@ -2,21 +2,17 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import Any, Callable
-from dataclasses import dataclass, fields, make_dataclass
-from abc import ABC, abstractmethod
-
-from pathlib import Path
 import argparse
+from abc import ABC, abstractmethod
+from collections.abc import Callable
+from dataclasses import dataclass, fields, make_dataclass
+from pathlib import Path
+from typing import Any
 
-from .args import arg_field, ArgType, Action, from_dataclass, from_field, add_arguments
+from .args import ArgType, add_arguments, arg_field, from_dataclass, from_field
 from .config_args import ConfigFileArgs
 from .extra_types import DirPathType
-
 from .interactive_args import InteractiveArgs, InteractiveBase, NoInteractiveArgs
-
-from icecream import ic
-
 
 ProcessFunc = Callable[[Any, dict[str, Any]], None]
 
@@ -28,7 +24,6 @@ class FileDetails(ABC):
         Retruns the file extension (or other regex) that will be used to glob for
         files of interest.
         """
-        pass
 
     @abstractmethod
     def filter(self, path: Path) -> bool:
@@ -37,7 +32,6 @@ class FileDetails(ABC):
         - True if the specified file is of interest,
         - False if the file should be ignored.
         """
-        pass
 
     @abstractmethod
     def target_name(self, in_path: Path) -> Path:
@@ -165,7 +159,7 @@ def process_bulk(
         )
 
     print("Found the following files to process:")
-    for ii, (in_path, out_path, config_path) in enumerate(file_sets):
+    for ii, (in_path, _, _) in enumerate(file_sets):
         print(f"  {ii + 1}: {in_path}")
 
     # Load any main config or cli args into new_args

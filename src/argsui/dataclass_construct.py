@@ -8,11 +8,22 @@
 # where the dataclass may have other dataclasses as fields,
 # use the dictionary to constructt the dataclass.
 # """
-from dataclasses import is_dataclass, fields
-from typing import Any, get_args, get_origin, get_type_hints, Optional, Union
+from dataclasses import fields, is_dataclass
+from typing import (
+    Any,
+    Union,
+    get_args,
+    get_origin,
+    get_type_hints,
+    TypeVar,
+    Optional,
+    cast,
+)
+
+T = TypeVar("T")
 
 
-def _is_optional(t):
+def _is_optional(t) -> bool:
     origin = get_origin(t)
     if origin is Union:
         args = get_args(t)
@@ -20,13 +31,13 @@ def _is_optional(t):
     return False
 
 
-def _strip_optional(t):
+def _strip_optional(t: Optional[T] | T) -> T:
     if _is_optional(t):
         return next(a for a in get_args(t) if a is not type(None))
-    return t
+    return cast(T, t)
 
 
-def _build_value(expected_type, value):
+def _build_value(expected_type: T, value) -> Optional[T]:
     if value is None:
         return None
 
@@ -57,15 +68,18 @@ def _build_value(expected_type, value):
             raise TypeError(
                 f"Expected dict for {expected_type}, got {type(value).__name__}"
             )
-        return {
-            _build_value(key_type, k): _build_value(val_type, v)
-            for k, v in value.items()
-        }
+        return cast(
+            T,
+            {
+                _build_value(key_type, k): _build_value(val_type, v)
+                for k, v in value.items()
+            },
+        )
 
     return value
 
 
-def build_dataclass_from_dict(dataclass_type, data: dict):
+def build_dataclass_from_dict(dataclass_type: T, data: dict) -> T:
     if not (isinstance(dataclass_type, type) and is_dataclass(dataclass_type)):
         raise TypeError(f"{dataclass_type} must be a dataclass type")
 

@@ -2,16 +2,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import Any
 from dataclasses import dataclass
-from pathlib import Path
-import argparse
-import os
 from enum import Enum
-
-import argsui as dargs
+from pathlib import Path
+from typing import Any
 
 import pytest
+
+import argsui as dargs
 
 
 class EnumValue(Enum):
@@ -55,7 +53,7 @@ class NumberFile(dargs.FileDetails):
         return in_path.with_suffix(".num")
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def output_file(tmp_path_factory) -> tuple[Path, Path]:
     in_dir = tmp_path_factory.mktemp("in")
     for ii in range(5):
@@ -83,7 +81,7 @@ def config_file(tmp_path_factory):
     return fn
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def individual_config_files(output_file):
     in_dir = output_file[0]
     for ii in range(5):
@@ -95,13 +93,12 @@ def individual_config_files(output_file):
             number={ii}
             nargs=[1,{ii}]
             """)
-    return None
 
 
 def test_basic(output_file):
 
-    assert len(os.listdir(output_file[0])) == 5
-    assert len(os.listdir(output_file[1])) == 0
+    assert len(list(Path(output_file[0]).iterdir())) == 5
+    assert len(list(Path(output_file[1]).iterdir())) == 0
 
     dargs.process_bulk(
         "basic",
@@ -134,7 +131,7 @@ def test_basic(output_file):
             "second",
         ],
     )
-    assert len(os.listdir(output_file[1])) == 5
+    assert len(list(Path(output_file[1]).iterdir())) == 5
 
     for ii in range(5):
         path: Path = output_file[1] / str(ii + 1) / f"test_{ii + 1}.num"
@@ -144,8 +141,8 @@ def test_basic(output_file):
 
 def test_defaults(output_file):
 
-    assert len(os.listdir(output_file[0])) == 5
-    assert len(os.listdir(output_file[1])) == 0
+    assert len(list(Path(output_file[0]).iterdir())) == 5
+    assert len(list(Path(output_file[1]).iterdir())) == 0
 
     dargs.process_bulk(
         "basic",
@@ -161,7 +158,7 @@ def test_defaults(output_file):
             output_file[1].as_posix(),
         ],
     )
-    assert len(os.listdir(output_file[1])) == 5
+    assert len(list(Path(output_file[1]).iterdir())) == 5
 
     for ii in range(5):
         path: Path = output_file[1] / str(ii + 1) / f"test_{ii + 1}.num"
@@ -193,8 +190,8 @@ def test_dest_aliase_mismatch(output_file):
             action="append", nargs=2, default_factory=list
         )
 
-    assert len(os.listdir(output_file[0])) == 5
-    assert len(os.listdir(output_file[1])) == 0
+    assert len(list(Path(output_file[0]).iterdir())) == 5
+    assert len(list(Path(output_file[1]).iterdir())) == 0
 
     dargs.process_bulk(
         "basic",
@@ -210,7 +207,7 @@ def test_dest_aliase_mismatch(output_file):
             output_file[1].as_posix(),
         ],
     )
-    assert len(os.listdir(output_file[1])) == 5
+    assert len(list(Path(output_file[1]).iterdir())) == 5
 
     for ii in range(5):
         path: Path = output_file[1] / str(ii + 1) / f"test_{ii + 1}.num"
@@ -220,8 +217,8 @@ def test_dest_aliase_mismatch(output_file):
 
 def test_config(output_file, config_file):
 
-    assert len(os.listdir(output_file[0])) == 5
-    assert len(os.listdir(output_file[1])) == 0
+    assert len(list(Path(output_file[0]).iterdir())) == 5
+    assert len(list(Path(output_file[1]).iterdir())) == 0
 
     dargs.process_bulk(
         "basic",
@@ -239,7 +236,7 @@ def test_config(output_file, config_file):
             str(config_file),
         ],
     )
-    assert len(os.listdir(output_file[1])) == 5
+    assert len(list(Path(output_file[1]).iterdir())) == 5
 
     for ii in range(5):
         path: Path = output_file[1] / str(ii + 1) / f"test_{ii + 1}.num"
@@ -249,8 +246,8 @@ def test_config(output_file, config_file):
 
 def test_each_config(output_file, individual_config_files):
 
-    assert len(os.listdir(output_file[0])) == 5
-    assert len(os.listdir(output_file[1])) == 0
+    assert len(list(Path(output_file[0]).iterdir())) == 5
+    assert len(list(Path(output_file[1]).iterdir())) == 0
 
     dargs.process_bulk(
         "basic",
@@ -266,7 +263,7 @@ def test_each_config(output_file, individual_config_files):
             output_file[1].as_posix(),
         ],
     )
-    assert len(os.listdir(output_file[1])) == 5
+    assert len(list(Path(output_file[1]).iterdir())) == 5
 
     for ii in range(5):
         path: Path = output_file[1] / str(ii + 1) / f"test_{ii + 1}.num"

@@ -2,14 +2,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import Any
 import argparse
-from dataclasses import dataclass
-from pathlib import Path
 import sys
 import tomllib
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
-from .args import arg_field, PartialParsedArgs, from_dataclass
+from .args import PartialParsedArgs, arg_field, from_dataclass
 
 
 @dataclass

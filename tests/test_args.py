@@ -2,16 +2,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import Any
+import argparse
 from dataclasses import dataclass
 from pathlib import Path
-import argparse
-
-import argsui as dargs
+from typing import Any
 
 import pytest
 
-from icecream import ic
+import argsui as dargs
 
 
 @dataclass
@@ -38,7 +36,7 @@ def process(args: BasicOptions, config: dict[str, Any]):
         fle.write(",".join([str(ii) for ii in args.lst]) + "\n")
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def output_file(tmp_path_factory):
     fn = tmp_path_factory.mktemp("data") / "output.txt"
     return fn
@@ -74,7 +72,7 @@ def test_defaults(output_file):
         assert lines[1] == str(False)
         assert lines[2] == str(True)
         assert lines[3] == str(None)
-        assert lines[4] == str("unused")
+        assert lines[4] == "unused"
         assert lines[5] == ""
 
 

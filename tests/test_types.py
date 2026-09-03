@@ -2,14 +2,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from enum import Enum
 import argparse
 from dataclasses import dataclass, fields
+from enum import Enum
 from pathlib import Path
 
-import argsui as dargs
-
 import pytest
+
+import argsui as dargs
 
 
 @pytest.fixture(scope="session")
@@ -45,7 +45,7 @@ def test_enums():
     class EnumValue(Enum):
         FIRST = 1
         SECOND = 2
-        THIRD = 2
+        THIRD = 3
 
     @dataclass
     class ValidOptions:
@@ -60,14 +60,15 @@ def test_enums():
         assert action.value_type is EnumValue
         assert action.choices is not None
         if action.dest == "complete":
-            assert action.choices == [t for t in EnumValue]
+            assert action.choices == list(EnumValue)
         else:
             assert len(action.choices) == 2
 
     @dataclass
     class InvalidOptions:
-        store: EnumValue = dargs.arg_field(action="store", default=17)
-        store: EnumValue = dargs.arg_field(
+        store: EnumValue = dargs.arg_field(action="store", default=17)  # noqa: PIE794
+
+        store: EnumValue = dargs.arg_field(  # noqa: PIE794
             action="store", choices=[EnumValue.FIRST, 17]
         )
 

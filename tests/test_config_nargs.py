@@ -5,11 +5,9 @@
 import argparse
 from dataclasses import dataclass
 
-import argsui as dargs
-
 import pytest
 
-from icecream import ic
+import argsui as dargs
 
 
 @dataclass

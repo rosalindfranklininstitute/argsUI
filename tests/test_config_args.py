@@ -5,9 +5,9 @@
 import argparse
 from dataclasses import dataclass
 
-import argsui as dargs
-
 import pytest
+
+import argsui as dargs
 
 
 @dataclass

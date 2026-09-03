@@ -2,11 +2,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from dataclasses import dataclass, MISSING, fields
-
-import argsui as dargs
+from dataclasses import MISSING, dataclass, fields
 
 import pytest
+
+import argsui as dargs
 
 
 def test_store_bool():
@@ -25,7 +25,7 @@ def test_store_bool():
         assert len(action.aliases) == 1
         assert action.aliases[0].startswith("--store-")
 
-        args_kw_args = action._to_argument_kwargs()
+        args_kw_args = action._to_argument_kwargs()  # noqa: SLF001
         assert "default" not in args_kw_args
         assert "type" not in args_kw_args
 

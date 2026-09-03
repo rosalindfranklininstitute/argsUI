@@ -2,39 +2,37 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-import copy
 import argparse
+import copy
+import logging
 import sys
 from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import cast, Any
 from dataclasses import dataclass, fields
-import logging
+from pathlib import Path
+from typing import Any, cast
 
 try:
-    from matplotlib.widgets import Button
     from PySide6 import QtGui, QtWidgets
 
     imported_qt = True
 except ImportError:
-    logging.warning(
+    logging.getLogger(__name__).warning(
         "Failed to import PySide6. InteractiveArgs will not work as expected"
     )
     imported_qt = False
 
 
 from .args import (
-    arg_field,
-    Action,
     MISSING_TYPE,
+    Action,
     ArgType,
     add_arguments,
-    from_field,
+    arg_field,
     from_dataclass,
+    from_field,
 )
-
-from .extra_types import FilePathType, DirPathType
 from .dataclass_construct import build_dataclass_from_dict
+from .extra_types import DirPathType, FilePathType
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +40,12 @@ if not imported_qt:
 
     class InteractiveBase:
         @classmethod
-        def parse_interactive(cls, prog: str, exclude: list[str] = [], args=None):
+        def parse_interactive(
+            cls,
+            prog: str,
+            exclude: list[str] = [],  # noqa: ARG003
+            args=None,
+        ) -> "InteractiveBase":
             args = args if args is not None else sys.argv[1:]
             interactive_parser = argparse.ArgumentParser(
                 "interactive_parser", add_help=False
@@ -61,11 +64,10 @@ if not imported_qt:
 
             if interactive_args.interactive:
                 raise RuntimeError("Did not import QT, cannot use module.")
-            else:
-                parser = argparse.ArgumentParser(prog=prog)
-                add_arguments(parser, actions)
-                final_args = vars(parser.parse_args(remaining_args))
-                final_args["interactive"] = False
+            parser = argparse.ArgumentParser(prog=prog)
+            add_arguments(parser, actions)
+            final_args = vars(parser.parse_args(remaining_args))
+            final_args["interactive"] = False
             return build_dataclass_from_dict(cls, final_args)
 
     @dataclass
@@ -105,7 +107,7 @@ else:
             pass
 
         @abstractmethod
-        def set_value(self, value: Any):
+        def set_value(self, value: Any) -> None:
             pass
 
         @abstractmethod
@@ -141,10 +143,10 @@ else:
         def get_parts(self) -> tuple[QtWidgets.QWidget, ...]:
             return self.label, self.entry, self.button
 
-        def value(self):
+        def value(self) -> Path | None:
             return Path(self.entry.text()) if self.selected else None
 
-        def set_value(self, value):
+        def set_value(self, value) -> None:
             if value is not None:
                 self.entry.setText(str(value))
                 self.selected = len(str(value)) > 0
@@ -157,7 +159,7 @@ else:
             grid.addWidget(self.button, row + 1, column + 2, 1, 1)
             return (2, 3)
 
-        def _browse(self):
+        def _browse(self) -> None:
             dialog = QtWidgets.QFileDialog(self.parent, self.name)
             if isinstance(self.path_type, FilePathType):
                 if self.path_type.must_exist:
@@ -193,10 +195,10 @@ else:
         def get_parts(self) -> tuple[QtWidgets.QWidget, ...]:
             return self.label, self.combo_box
 
-        def value(self):
+        def value(self) -> Any:
             return self.choices[self.combo_box.currentIndex()]
 
-        def set_value(self, value):
+        def set_value(self, value) -> None:
             if value is not None:
                 inx = self.choices.index(value)
                 self.combo_box.setCurrentIndex(inx)
@@ -219,10 +221,10 @@ else:
         def get_parts(self) -> tuple[QtWidgets.QWidget, ...]:
             return (self.check_box,)
 
-        def value(self):
+        def value(self) -> bool:
             return self.check_box.isChecked()
 
-        def set_value(self, value):
+        def set_value(self, value: bool) -> None:
             self.check_box.setChecked(value)
 
         def add_to_grid(
@@ -231,15 +233,15 @@ else:
             grid.addWidget(self.check_box, row, column, 1, 2)
             return (1, 2)
 
-    def add_validator_for_type(typ: type, entry: QtWidgets.QLineEdit):
-        if typ == float:
+    def add_validator_for_type(typ: type, entry: QtWidgets.QLineEdit) -> None:
+        if typ is float:
             validator = QtGui.QDoubleValidator(-1e12, 1e12, 12, entry)
             validator.setNotation(QtGui.QDoubleValidator.ScientificNotation)
             entry.setValidator(validator)
-        elif typ == int:
+        elif typ is int:
             validator = QtGui.QIntValidator(entry)
             entry.setValidator(validator)
-        elif typ == str:
+        elif typ is str:
             pass
         else:
             raise ValueError(f"Type {typ} not supported")
@@ -263,26 +265,24 @@ else:
         def get_parts(self) -> tuple[QtWidgets.QWidget, ...]:
             return (self.label, self.entry)
 
-        def value(self):
+        def value(self) -> float | int | str | None:
             try:
                 if self.value_type is float:
                     return float(self.entry.text().strip())
-                elif self.value_type is int:
+                if self.value_type is int:
                     return int(self.entry.text().strip())
-                else:
-                    val = self.entry.text().strip()
-                    if len(val) == 0:
-                        return None
-                    else:
-                        return val
+                val = self.entry.text().strip()
+                if len(val) == 0:
+                    return None
 
             except ValueError:
                 if self.required:
                     raise
-                else:
-                    return None
+                return None
+            else:
+                return val
 
-        def set_value(self, value):
+        def set_value(self, value) -> None:
             if value is not None:
                 self.entry.setText(str(value))
 
@@ -328,7 +328,7 @@ else:
             self.label = QtWidgets.QLabel(f"{self.name}:")
             self.label.setToolTip(doc)
             self.entries = [QtWidgets.QLineEdit() for v in self.types]
-            for entry, t in zip(self.entries, self.types):
+            for entry, t in zip(self.entries, self.types, strict=True):
                 entry.setPlaceholderText("Type an item and press + or Enter")
                 entry.setToolTip(doc)
                 add_validator_for_type(t, entry)
@@ -343,16 +343,16 @@ else:
 
             self.add_button.clicked.connect(self._add_item_from_entries)
 
-        def _add_item_from_entries(self):
+        def _add_item_from_entries(self) -> None:
             values = [entry.text().strip() for entry in self.entries]
             self.add_item(values, raise_on_invalid=False)
 
-        def set_value(self, value):
+        def set_value(self, value) -> None:
             self.list_widget.clear()
             for item in value:
                 self.add_item(item)
 
-        def add_item(self, values: Any, raise_on_invalid: bool = True):
+        def add_item(self, values: Any, raise_on_invalid: bool = True) -> None:
             if isinstance(values, list):
                 if len(values) != len(self.types):
                     raise ValueError(
@@ -366,7 +366,7 @@ else:
                 values = [values]
 
             valid = True
-            for entry, value in zip(self.entries, values):
+            for entry, value in zip(self.entries, values, strict=True):
                 if validator := entry.validator():
                     valid &= (
                         validator.validate(str(value), 0)[0]
@@ -378,7 +378,7 @@ else:
                 return
             item = QtWidgets.QListWidgetItem()
 
-            def remove():
+            def remove() -> None:
                 row = self.list_widget.row(item)
                 if row != -1:
                     self.list_widget.takeItem(row)
@@ -391,19 +391,24 @@ else:
                 entry.clear()
             self.entries[0].setFocus()
 
-        def get_parts(self):
+        def get_parts(self) -> tuple:
             return (
                 self.input_layout,
                 self.list_widget,
             )
 
-        def value(self):
+        def value(self) -> list:
             values = []
             for ii in range(self.list_widget.count()):
                 item = self.list_widget.item(ii)
                 widget = self.list_widget.itemWidget(item)
                 values.append(
-                    [t(v) for t, v in zip(self.types, cast(ItemWidget, widget).values)]
+                    [
+                        t(v)
+                        for t, v in zip(
+                            self.types, cast(ItemWidget, widget).values, strict=True
+                        )
+                    ]
                 )
 
             if len(self.types) == 1:
@@ -442,7 +447,7 @@ else:
 
             self.result_values: dict[str, Any] | None = None
 
-        def add_argument(self, action: Action):
+        def add_argument(self, action: Action) -> None:
             name = action.get_display_name()
             doc = action.help
 
@@ -469,8 +474,7 @@ else:
                 case "store_true":
                     option = BoolOption(name, doc, False, self)
                 case "store_false":
-                    if name.startswith("no "):
-                        name = name[3:]
+                    name = name.removeprefix("no ")
                     option = BoolOption(name, doc, True, self)
                 case "append":
                     types: list[type] = []
@@ -488,11 +492,11 @@ else:
             size = option.add_to_grid(self._layout, self.row, 0)
             self.row += size[0]
 
-        def set_value(self, name: str, value: Any):
+        def set_value(self, name: str, value: Any) -> None:
             assert name in self._actions
             self._actions[name][1].set_value(value)
 
-        def add_confirm_buttons(self):
+        def add_confirm_buttons(self) -> None:
             self.btn_ok = QtWidgets.QPushButton("OK")
             self.btn_cancel = QtWidgets.QPushButton("Cancel")
             self.btn_ok.clicked.connect(self.on_ok)
@@ -504,7 +508,7 @@ else:
             btn_hbox.addWidget(self.btn_cancel)
             self._layout.addLayout(btn_hbox, self.row, 0, 1, 3)
 
-        def on_ok(self):
+        def on_ok(self) -> None:
 
             self.result_values = dict()
             missing_required_actions = []
@@ -543,7 +547,7 @@ else:
 
             self.close()
 
-        def launch(self, app: QtWidgets.QApplication):
+        def launch(self, app: QtWidgets.QApplication) -> dict[str, Any] | None:
             self.show()
             self.raise_()
             self.activateWindow()
@@ -552,7 +556,9 @@ else:
 
     class InteractiveBase:
         @classmethod
-        def parse_interactive(cls, prog: str, exclude: list[str] = [], args=None):
+        def parse_interactive(
+            cls, prog: str, exclude: list[str] = [], args=None
+        ) -> Any:
             args = args if args is not None else sys.argv[1:]
             interactive_parser = argparse.ArgumentParser(
                 "interactive_parser", add_help=False
