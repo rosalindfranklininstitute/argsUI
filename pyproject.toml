@@ -45,6 +45,10 @@ addopts = [
     "--local-badge-package=argsui",
 ]
 
+[tool.typos.default.extend-identifiers]
+fle = 'fle'
+DNE = 'DNE'
+
 [tool.ruff]
 indent-width=4
 

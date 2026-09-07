@@ -235,11 +235,11 @@ class Action:
         result.update(self.extra_kw_args)
         return result
 
-    def get_default_aliase(self) -> str:
+    def get_default_alias(self) -> str:
         return self.aliases[-1]
 
     def get_display_name(self) -> str:
-        return self.get_default_aliase().strip("-").replace("-", " ")
+        return self.get_default_alias().strip("-").replace("-", " ")
 
     def is_default(self, value) -> bool:
         """
@@ -270,37 +270,37 @@ class Action:
                     case None:
                         return []
                     case True:
-                        return [self.get_default_aliase()]
+                        return [self.get_default_alias()]
                     case False:
-                        return [f"--no-{self.get_default_aliase().strip('-')}"]
+                        return [f"--no-{self.get_default_alias().strip('-')}"]
             case "store_true":
                 assert isinstance(value, bool)
-                return [self.get_default_aliase()] if value else []
+                return [self.get_default_alias()] if value else []
             case "store_false":
                 assert isinstance(value, bool)
-                return [self.get_default_aliase()] if not value else []
+                return [self.get_default_alias()] if not value else []
             case "append":
                 results = []
                 for inner_value in value:
                     if self.nargs is not None:
                         results.extend(
                             [
-                                self.get_default_aliase(),
+                                self.get_default_alias(),
                                 *[self._value_to_str(v) for v in inner_value],
                             ]
                         )
                     else:
                         results.extend(
-                            [self.get_default_aliase(), self._value_to_str(inner_value)]
+                            [self.get_default_alias(), self._value_to_str(inner_value)]
                         )
                 return results
             case _:
                 if self.nargs is not None:
                     return [
-                        self.get_default_aliase(),
+                        self.get_default_alias(),
                         *[self._value_to_str(v) for v in value],
                     ]
-                return [self.get_default_aliase(), self._value_to_str(value)]
+                return [self.get_default_alias(), self._value_to_str(value)]
 
     def _child_alaises(
         self, short_aliases: list[str], long_aliases: list[str], child: "Action"
@@ -362,7 +362,7 @@ class Action:
 
 
 class ActionList(list[Action]):
-    def aliase_dict(self, include_short: bool = False) -> dict[str, Action]:
+    def alias_dict(self, include_short: bool = False) -> dict[str, Action]:
         result: dict[str, Action] = {}
         for a in self:
             a_dict = {
@@ -608,13 +608,13 @@ def from_dataclass(dcls) -> ActionList:
 def add_arguments(parser: argparse.ArgumentParser, dcls: type | list[Action]) -> None:
 
     actions = from_dataclass(dcls) if isinstance(dcls, type) else dcls
-    defered = []
+    deferred = []
     for a in actions:
         if a.defer:
-            defered.append(a)
+            deferred.append(a)
         else:
             a.add_to_parser(parser)
-    for a in defered:
+    for a in deferred:
         a.add_to_parser(parser)
 
 

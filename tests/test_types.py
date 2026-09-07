@@ -92,7 +92,7 @@ def test_file_may_not_exist(test_files):
     args = parser.parse_args([str(test_files)])
     assert args.fle.is_file()
 
-    args = parser.parse_args(["non existant file.txt"])
+    args = parser.parse_args(["non existent file.txt"])
     assert not args.fle.is_file()
 
     with pytest.raises(SystemExit):
@@ -115,7 +115,7 @@ def test_file_must_exist(test_files):
     assert args.fle.is_file()
 
     with pytest.raises(SystemExit):
-        parser.parse_args(["non existant file.txt"])
+        parser.parse_args(["non existent file.txt"])
 
     with pytest.raises(SystemExit):
         parser.parse_args([str(test_files.parent)])
@@ -136,7 +136,7 @@ def test_dir_may_not_exist(test_files):
     args = parser.parse_args([str(test_files.parent)])
     assert args.fle.is_dir()
 
-    args = parser.parse_args(["non existant dir"])
+    args = parser.parse_args(["non existent dir"])
     assert not args.fle.is_dir()
 
     with pytest.raises(SystemExit):
@@ -159,7 +159,7 @@ def test_dir_must_exist(test_files):
     assert args.fle.is_dir()
 
     with pytest.raises(SystemExit):
-        parser.parse_args(["non existant dir"])
+        parser.parse_args(["non existent dir"])
 
     with pytest.raises(SystemExit):
         parser.parse_args([str(test_files)])

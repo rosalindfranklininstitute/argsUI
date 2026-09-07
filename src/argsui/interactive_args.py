@@ -9,7 +9,7 @@ import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, fields
 from pathlib import Path
-from typing import Any, cast, Self
+from typing import Any, cast
 
 try:
     from PySide6 import QtGui, QtWidgets, QtCore

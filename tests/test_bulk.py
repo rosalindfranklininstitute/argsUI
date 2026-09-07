@@ -36,10 +36,10 @@ class BasicOptions(dargs.ConfigFileArgs):
 
 
 def process(args: BasicOptions, config: dict[str, Any]) -> None:
-    with open(args.in_file, "r") as in_fle:
-        num = int(in_fle.readline().strip())
-        with open(args.out_file, "w") as out_fle:
-            out_fle.write(str(num + args.number) + "\n")
+    with open(args.in_file, "r") as in_file:
+        num = int(in_file.readline().strip())
+        with open(args.out_file, "w") as out_file:
+            out_file.write(str(num + args.number) + "\n")
 
 
 class NumberFile(dargs.FileDetails):
@@ -166,9 +166,9 @@ def test_defaults(output_file):
         assert int(path.read_text()) == ii + 12
 
 
-def test_dest_aliase_mismatch(output_file):
+def test_dest_alias_mismatch(output_file):
     @dataclass
-    class MissmatchOptions(dargs.ConfigFileArgs):
+    class MismatchOptions(dargs.ConfigFileArgs):
         in_file: Path = dargs.arg_field(
             "--input",
             arg_type=dargs.ArgType.EXPLICIT_ONLY,
@@ -195,7 +195,7 @@ def test_dest_aliase_mismatch(output_file):
 
     dargs.process_bulk(
         "basic",
-        MissmatchOptions,
+        MismatchOptions,
         process,
         NumberFile(),
         input_arg_name="in_file",

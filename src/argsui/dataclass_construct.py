@@ -6,7 +6,7 @@
 # """
 # Given a dictionary that represents the properties of a python dataclass,
 # where the dataclass may have other dataclasses as fields,
-# use the dictionary to constructt the dataclass.
+# use the dictionary to construct the dataclass.
 # """
 from dataclasses import fields, is_dataclass
 from typing import (

@@ -3,24 +3,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
-from dataclasses import MISSING, dataclass, fields
+from dataclasses import dataclass
+import logging
 
-import pytest
 
 import argsui as dargs
 from argsui import InteractiveArgs, from_dataclass
 
 try:
-    from PySide6 import QtGui, QtWidgets, QtCore
-
-    imported_qt = True
-except ImportError:
-    logging.getLogger(__name__).warning(
-        "Failed to import PySide6. InteractiveArgs will not work as expected"
-    )
-    imported_qt = False
-
-if imported_qt:
+    from PySide6 import QtWidgets, QtCore
 
     def test_bool(qtbot):
 
@@ -34,9 +25,9 @@ if imported_qt:
         window = BoolOptions.create_window("test", actions, [], [])
         qtbot.addWidget(window)
 
-        assert window._layout.rowCount() == 2 + 1
-        for i in range(0, 2):
-            widget = window._layout.itemAtPosition(i, 0).widget()
+        assert window.layout().rowCount() == 2 + 1
+        for i in range(2):
+            widget = window.layout().itemAtPosition(i, 0).widget()
             assert isinstance(widget, QtWidgets.QCheckBox)
             if widget.text() == "store true":
                 assert not widget.isChecked()
@@ -59,9 +50,9 @@ if imported_qt:
         window = BoolOptions.create_window("test", actions, [], [])
         qtbot.addWidget(window)
 
-        assert window._layout.rowCount() == 2 + 1
-        for i in range(0, 2):
-            widget = window._layout.itemAtPosition(i, 0).widget()
+        assert window.layout().rowCount() == 2 + 1
+        for i in range(2):
+            widget = window.layout().itemAtPosition(i, 0).widget()
             assert isinstance(widget, QtWidgets.QCheckBox)
             widget.toggle()
 
@@ -94,9 +85,9 @@ if imported_qt:
         window = BoolOptions.create_window("test", actions, [], [])
         qtbot.addWidget(window)
 
-        assert window._layout.rowCount() == 3 + 1
-        for i in range(0, 3):
-            widget = window._layout.itemAtPosition(i, 0).widget()
+        assert window.layout().rowCount() == 3 + 1
+        for i in range(3):
+            widget = window.layout().itemAtPosition(i, 0).widget()
             assert isinstance(widget, QtWidgets.QCheckBox)
             match i:
                 case 0:
@@ -122,3 +113,8 @@ if imported_qt:
         assert window.result_values["first"] is True
         assert window.result_values["second"] is False
         assert window.result_values["third"] is None
+
+except ImportError:
+    logging.getLogger(__name__).warning(
+        "Failed to import PySide6. InteractiveArgs will not work as expected"
+    )

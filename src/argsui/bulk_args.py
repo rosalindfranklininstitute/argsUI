@@ -21,7 +21,7 @@ class FileDetails(ABC):
     @abstractmethod
     def file_extension(self) -> str:
         """
-        Retruns the file extension (or other regex) that will be used to glob for
+        Returns the file extension (or other regex) that will be used to glob for
         files of interest.
         """
 
@@ -188,9 +188,9 @@ def process_bulk(
             a = from_field(f)
             assert a is not None
             if f.name == input_arg_name:
-                input_cli_name = a.get_default_aliase()
+                input_cli_name = a.get_default_alias()
             else:
-                output_cli_name = a.get_default_aliase()
+                output_cli_name = a.get_default_alias()
         elif input_cli_name is not None and output_cli_name is not None:
             break
         else:
