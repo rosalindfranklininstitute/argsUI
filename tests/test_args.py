@@ -127,3 +127,48 @@ def test_no_arg_field(output_file):
 
     with pytest.raises(SystemExit):
         parser.parse_args(args=["--not-an-arg"])
+
+
+def test_optional_bool():
+    @dataclass
+    class OptionalBool:
+        first: bool = dargs.arg_field(
+            action=argparse.BooleanOptionalAction, default=True
+        )
+        second: bool = dargs.arg_field(
+            action=argparse.BooleanOptionalAction, default=False
+        )
+
+    parser = argparse.ArgumentParser(prog="test")
+    dargs.add_arguments(parser, OptionalBool)
+
+    args = parser.parse_args(
+        args=[
+            "--first",
+            "--no-second",
+        ]
+    )
+
+    options = dargs.from_arguments(args, OptionalBool)
+
+    assert options.first
+    assert not options.second
+
+    args = parser.parse_args(
+        args=[
+            "--no-first",
+            "--second",
+        ]
+    )
+
+    options = dargs.from_arguments(args, OptionalBool)
+
+    assert not options.first
+    assert options.second
+
+    args = parser.parse_args(args=[])
+
+    options = dargs.from_arguments(args, OptionalBool)
+
+    assert options.first
+    assert not options.second
