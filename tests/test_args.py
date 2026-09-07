@@ -138,6 +138,9 @@ def test_optional_bool():
         second: bool = dargs.arg_field(
             action=argparse.BooleanOptionalAction, default=False
         )
+        third: bool = dargs.arg_field(
+            action=argparse.BooleanOptionalAction, default=None
+        )
 
     parser = argparse.ArgumentParser(prog="test")
     dargs.add_arguments(parser, OptionalBool)
@@ -146,29 +149,34 @@ def test_optional_bool():
         args=[
             "--first",
             "--no-second",
+            "--third",
         ]
     )
 
     options = dargs.from_arguments(args, OptionalBool)
 
-    assert options.first
-    assert not options.second
+    assert options.first is True
+    assert options.second is False
+    assert options.third is True
 
     args = parser.parse_args(
         args=[
             "--no-first",
             "--second",
+            "--no-third",
         ]
     )
 
     options = dargs.from_arguments(args, OptionalBool)
 
-    assert not options.first
-    assert options.second
+    assert options.first is False
+    assert options.second is True
+    assert options.third is False
 
     args = parser.parse_args(args=[])
 
     options = dargs.from_arguments(args, OptionalBool)
 
-    assert options.first
-    assert not options.second
+    assert options.first is True
+    assert options.second is False
+    assert options.third is None

@@ -9,10 +9,10 @@ import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, fields
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, cast, Self
 
 try:
-    from PySide6 import QtGui, QtWidgets
+    from PySide6 import QtGui, QtWidgets, QtCore
 
     imported_qt = True
 except ImportError:
@@ -25,6 +25,7 @@ except ImportError:
 from .args import (
     MISSING_TYPE,
     Action,
+    ActionList,
     ArgType,
     add_arguments,
     arg_field,
@@ -211,21 +212,31 @@ else:
             return (1, 2)
 
     class BoolOption(Option):
-        def __init__(self, name, doc, default: bool, parent: QtWidgets.QWidget):
+        def __init__(self, name, doc, default: bool | None, parent: QtWidgets.QWidget):
             super().__init__(name, doc, parent)
 
             self.check_box = QtWidgets.QCheckBox(f"{self.name}")
-            self.check_box.setChecked(default)
+            self.check_box.setTristate(True)
+            self.set_value(default)
             self.check_box.setToolTip(doc)
 
         def get_parts(self) -> tuple[QtWidgets.QWidget, ...]:
             return (self.check_box,)
 
-        def value(self) -> bool:
-            return self.check_box.isChecked()
+        def value(self) -> bool | None:
+            match self.check_box.checkState():
+                case QtCore.Qt.Checked:
+                    return True
+                case QtCore.Qt.Unchecked:
+                    return False
+                case QtCore.Qt.PartiallyChecked:
+                    return None
 
-        def set_value(self, value: bool) -> None:
-            self.check_box.setChecked(value)
+        def set_value(self, value: bool | None) -> None:
+            if value is None:
+                self.check_box.setCheckState(QtCore.Qt.PartiallyChecked)
+            else:
+                self.check_box.setChecked(value)
 
         def add_to_grid(
             self, grid: QtWidgets.QGridLayout, row: int, column: int
@@ -471,6 +482,10 @@ else:
                             )
                     else:
                         option = ChoicesOption(name, doc, action.choices, self)
+                case argparse.BooleanOptionalAction:
+                    option = BoolOption(
+                        name, doc, cast(bool | None, action.default), self
+                    )
                 case "store_true":
                     option = BoolOption(name, doc, False, self)
                 case "store_false":
@@ -556,6 +571,35 @@ else:
 
     class InteractiveBase:
         @classmethod
+        def create_window(
+            cls,
+            prog: str,
+            actions: ActionList,
+            args: list[str],
+            exclude: list[str],
+        ) -> MainWindow:
+            window = MainWindow(prog)
+
+            parser = argparse.ArgumentParser(prog=prog)
+            exclude.append("interactive")
+
+            for a in actions:
+                if a.dest in exclude:
+                    continue
+                window.add_argument(a)
+                not_required_a = copy.copy(a)
+                not_required_a.required = False
+                not_required_a.add_to_parser(parser)
+
+            final_args = parser.parse_args(args)
+
+            for k, v in vars(final_args).items():
+                window.set_value(k, v)
+
+            window.add_confirm_buttons()
+            return window
+
+        @classmethod
         def parse_interactive(
             cls, prog: str, exclude: list[str] = [], args=None
         ) -> Any:
@@ -577,25 +621,7 @@ else:
 
             if interactive_args.interactive:
                 app = QtWidgets.QApplication(sys.argv)
-                window = MainWindow(prog)
-
-                parser = argparse.ArgumentParser(prog=prog)
-                exclude.append("interactive")
-
-                for a in actions:
-                    if a.dest in exclude:
-                        continue
-                    window.add_argument(a)
-                    not_required_a = copy.copy(a)
-                    not_required_a.required = False
-                    not_required_a.add_to_parser(parser)
-
-                final_args = parser.parse_args(remaining_args)
-
-                for k, v in vars(final_args).items():
-                    window.set_value(k, v)
-
-                window.add_confirm_buttons()
+                window = cls.create_window(prog, actions, remaining_args, exclude)
 
                 final_args = window.launch(app)
                 if final_args is None:

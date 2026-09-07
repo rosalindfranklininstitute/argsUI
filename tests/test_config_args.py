@@ -113,3 +113,39 @@ def test_help(capsys):
     captured = capsys.readouterr()
 
     assert captured.out == parser.format_help()
+
+
+def test_bool_optional(tmp_path_factory):
+    @dataclass
+    class OptionalBool(dargs.ConfigFileArgs):
+        first: bool = dargs.arg_field(
+            action=argparse.BooleanOptionalAction, default=None
+        )
+        second: bool = dargs.arg_field(
+            action=argparse.BooleanOptionalAction, default=None
+        )
+        third: bool = dargs.arg_field(
+            action=argparse.BooleanOptionalAction, default=None
+        )
+
+    parser = argparse.ArgumentParser(prog="test")
+
+    fn = tmp_path_factory.mktemp("data") / "config.toml"
+    with open(fn, "w") as fle:
+        fle.write("""
+        [test]
+        first=true
+        second=false
+
+        [other]
+        z = 12
+        """)
+
+    dargs.add_arguments(parser, OptionalBool)
+    print(parser)
+
+    args, config_dict = OptionalBool.parse_args(parser, ["--config", str(fn)])
+    assert config_dict == dict(other=dict(z=12))
+    assert args.first is True
+    assert args.second is False
+    assert args.third is None

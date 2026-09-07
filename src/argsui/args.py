@@ -265,6 +265,14 @@ class Action:
 
     def to_cli(self, value) -> list[str]:
         match self.action:
+            case argparse.BooleanOptionalAction:
+                match value:
+                    case None:
+                        return []
+                    case True:
+                        return [self.get_default_aliase()]
+                    case False:
+                        return [f"--no-{self.get_default_aliase().strip('-')}"]
             case "store_true":
                 assert isinstance(value, bool)
                 return [self.get_default_aliase()] if value else []
