@@ -71,27 +71,6 @@ if not imported_qt:
             final_args["interactive"] = False
             return build_dataclass_from_dict(cls, final_args)
 
-    @dataclass
-    class InteractiveArgs(InteractiveBase):
-        interactive: Path = arg_field(
-            "--int",
-            doc="If present will present the arguments interactively, instead of on the command line.",
-            required=False,
-            action="store_true",
-        )
-
-    @dataclass
-    class NoInteractiveArgs(InteractiveBase):
-        interactive: Path = arg_field(
-            "--no-int",
-            "--not-interactive",
-            "--cli",
-            "--no-interactive",
-            arg_type=ArgType.EXPLICIT_ONLY,
-            doc="If present will present the arguments on the console, instead of interactively.",
-            required=False,
-            action="store_false",
-        )
 else:
 
     class Option(ABC):
@@ -216,7 +195,8 @@ else:
             super().__init__(name, doc, parent)
 
             self.check_box = QtWidgets.QCheckBox(f"{self.name}")
-            self.check_box.setTristate(True)
+            if default is None:
+                self.check_box.setTristate(True)
             self.set_value(default)
             self.check_box.setToolTip(doc)
 
@@ -636,24 +616,26 @@ else:
                 final_args["interactive"] = False
             return build_dataclass_from_dict(cls, final_args)
 
-    @dataclass
-    class InteractiveArgs(InteractiveBase):
-        interactive: Path = arg_field(
-            "--int",
-            doc="If present will present the arguments interactively, instead of on the command line.",
-            required=False,
-            action="store_true",
-        )
 
-    @dataclass
-    class NoInteractiveArgs(InteractiveBase):
-        interactive: Path = arg_field(
-            "--no-int",
-            "--not-interactive",
-            "--cli",
-            "--no-interactive",
-            arg_type=ArgType.EXPLICIT_ONLY,
-            doc="If present will present the arguments on the console, instead of interactively.",
-            required=False,
-            action="store_false",
-        )
+@dataclass
+class InteractiveArgs(InteractiveBase):
+    interactive: bool = arg_field(
+        "--int",
+        doc="If present will present the arguments interactively, instead of on the command line.",
+        required=False,
+        action="store_true",
+    )
+
+
+@dataclass
+class NoInteractiveArgs(InteractiveBase):
+    interactive: bool = arg_field(
+        "--no-int",
+        "--not-interactive",
+        "--cli",
+        "--no-interactive",
+        arg_type=ArgType.EXPLICIT_ONLY,
+        doc="If present will present the arguments on the console, instead of interactively.",
+        required=False,
+        action="store_false",
+    )
