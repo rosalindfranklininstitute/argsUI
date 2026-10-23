@@ -31,4 +31,9 @@ Inspired by [datargs](https://github.com/roee30/datargs.git) and [mininterface](
 - `bulk_args` allows wrapping a single file CLI into a recursive multi file CLI.
 - All of these can easily be composed, and the arguments (fields of the dataclass) filled in progressively, or overridden, at each stage.
 
+# Dependencies
+
+For basic operations `argsUI` depends only on built in `dataclasses` and `argparser`. This provides the tools to use `argparser` for calling the code.
+
+This code also allows building a simple automatic GUI that presents to options. For this the optional dependency group `[gui]` can be used. It installes `pyside6`.
 
